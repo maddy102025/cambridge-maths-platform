@@ -1,0 +1,208 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String             @id @default(cuid())
+  email           String             @unique
+  passwordHash    String
+  fullName        String
+  phone           String?
+  phoneVerified   Boolean            @default(false)
+  emailVerified   Boolean            @default(true)
+  role            String             @default("STUDENT") // STUDENT, TEACHER, ADMIN
+  avatarUrl       String?
+  bio             String?
+  projectedGrade  String?            @default("A*")
+  studyStreakDays Int                @default(7)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  enrollments     StudentEnrollment[]
+  studyMaterials  StudyMaterial[]    @relation("UserMaterials")
+  submissions     Submission[]
+  attendance      AttendanceRecord[]
+  notifications   Notification[]
+  announcements   Announcement[]     @relation("TeacherAnnouncements")
+}
+
+model Subject {
+  id             String              @id @default(cuid())
+  code           String              @unique
+  name           String
+  syllabusInfo   String
+  description    String
+  level          String              // "O Level" or "A Level"
+  instructorName String              @default("Ms. Eleanor Vance")
+  isAvailable    Boolean             @default(true)
+  scheduleInfo   String?
+  iconName       String?
+  orderIndex     Int                 @default(0)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  enrollments    StudentEnrollment[]
+  lessons        Lesson[]
+  materials      StudyMaterial[]
+  assignments    Assignment[]
+  attendance     AttendanceRecord[]
+  announcements  Announcement[]
+}
+
+model StudentEnrollment {
+  id         String   @id @default(cuid())
+  studentId  String
+  subjectId  String
+  status     String   @default("ACTIVE") // ACTIVE, COMPLETED, SUSPENDED
+  enrolledAt DateTime @default(now())
+
+  student    User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject    Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, subjectId])
+}
+
+model Lesson {
+  id              String   @id @default(cuid())
+  subjectId       String
+  title           String
+  description     String?
+  videoUrl        String?
+  durationMinutes Int?     @default(45)
+  orderIndex      Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  subject         Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+}
+
+model StudyMaterial {
+  id              String   @id @default(cuid())
+  subjectId       String
+  title           String
+  topic           String
+  description     String?
+  fileType        String   // PDF, DOCX, ZIP, IMAGE
+  fileSize        String   // e.g. "2.4 MB"
+  fileUrl         String
+  uploadedByRole  String   @default("TEACHER") // TEACHER, STUDENT
+  uploadedById    String
+  isPublicToClass Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  subject         Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  uploadedBy      User     @relation("UserMaterials", fields: [uploadedById], references: [id], onDelete: Cascade)
+}
+
+model Assignment {
+  id                   String       @id @default(cuid())
+  subjectId            String
+  title                String
+  instructions         String
+  maxMarks             Int          @default(100)
+  dueDate              DateTime
+  assignedDate         DateTime     @default(now())
+  allowLateSubmissions Boolean      @default(true)
+  allowResubmissions   Boolean      @default(true)
+  referenceFileUrl     String?
+  referenceFileName    String?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  subject              Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  submissions          Submission[]
+}
+
+model Submission {
+  id              String              @id @default(cuid())
+  assignmentId    String
+  studentId       String
+  status          String              @default("SUBMITTED") // NOT_STARTED, SUBMITTED, LATE, GRADED, RETURNED_FOR_REVISION
+  currentVersion  Int                 @default(1)
+  submittedAt     DateTime?           @default(now())
+  gradeScore      Float?
+  gradeMax        Float?              @default(100)
+  gradeLetter     String?
+  feedback        String?
+  gradedAt        DateTime?
+  gradedById      String?
+  isPublished     Boolean             @default(false)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  assignment      Assignment          @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student         User                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  versions        SubmissionVersion[]
+
+  @@unique([assignmentId, studentId])
+}
+
+model SubmissionVersion {
+  id           String     @id @default(cuid())
+  submissionId String
+  versionNumber Int       @default(1)
+  fileUrl      String
+  fileName     String
+  fileSize     String
+  fileType     String
+  studentNote  String?
+  submittedAt  DateTime   @default(now())
+
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+}
+
+model AttendanceRecord {
+  id        String   @id @default(cuid())
+  studentId String
+  subjectId String
+  classDate DateTime
+  status    String   @default("PRESENT") // PRESENT, ABSENT, EXCUSED, LATE
+  remarks   String?
+  createdAt DateTime @default(now())
+
+  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+}
+
+model Announcement {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  subjectId   String?
+  priority    String   @default("NORMAL") // NORMAL, HIGH, URGENT
+  publishedAt DateTime @default(now())
+  authorId    String
+
+  subject     Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  author      User     @relation("TeacherAnnouncements", fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  linkUrl   String?
+  type      String   @default("SYSTEM") // ASSIGNMENT, GRADE, ANNOUNCEMENT, RESOURCE, SYSTEM
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ContactInquiry {
+  id                String   @id @default(cuid())
+  name              String
+  email             String
+  phone             String?
+  subjectOfInterest String?
+  message           String
+  status            String   @default("NEW") // NEW, CONTACTED, RESOLVED
+  createdAt         DateTime @default(now())
+}
