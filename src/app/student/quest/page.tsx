@@ -1,52 +1,44 @@
-import React from 'react';
-import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth';
-import prisma from '@/lib/prisma';
+'use client';
+
+import React, { useEffect, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import QuestTrackerView from '@/components/quest/QuestTrackerView';
 
-export const dynamic = 'force-dynamic';
+function QuestContent() {
+  const searchParams = useSearchParams();
+  const initialSelectedId = searchParams.get('id') || undefined;
+  const [data, setData] = useState<any>(null);
 
-export default async function StudentQuestPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ id?: string }>;
-}) {
-  const { id } = await searchParams;
-  const user = await getCurrentUser();
-  if (!user) redirect('/login');
+  useEffect(() => {
+    fetch('/api/portal?view=student-quest')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((res) => {
+        if (res) setData(res);
+      })
+      .catch(console.error);
+  }, []);
 
-  // Fetch enrolled subjects
-  const enrollments = await prisma.studentEnrollment.findMany({
-    where: { studentId: user.id, status: 'ACTIVE' },
-    select: { subjectId: true },
-  });
-
-  const subjectIds = enrollments.map((e) => e.subjectId);
-
-  // Fetch assignments for enrolled subjects
-  const assignments = await prisma.assignment.findMany({
-    where: {
-      subjectId: { in: subjectIds },
-    },
-    include: {
-      subject: true,
-      submissions: {
-        where: { studentId: user.id },
-        include: {
-          versions: {
-            orderBy: { versionNumber: 'desc' },
-          },
-        },
-      },
-    },
-    orderBy: { dueDate: 'asc' },
-  });
+  if (!data) {
+    return (
+      <div className="py-12 text-center text-xs text-slate-light font-medium">
+        Loading quest assignments...
+      </div>
+    );
+  }
 
   return (
     <QuestTrackerView
-      assignments={assignments}
-      initialSelectedId={id}
-      userId={user.id}
+      assignments={data.assignments || []}
+      initialSelectedId={initialSelectedId}
+      userId={data.user?.id}
     />
+  );
+}
+
+export default function StudentQuestPage() {
+  return (
+    <Suspense fallback={<div className="py-12 text-center text-xs text-slate-light">Loading quest tracker...</div>}>
+      <QuestContent />
+    </Suspense>
   );
 }

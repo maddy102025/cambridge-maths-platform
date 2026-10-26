@@ -1,0 +1,17 @@
+name = "cambridge-maths-platform"
+main = "cloudflare/worker.ts"
+account_id = "f76519e16ea4324200916b00414b0fb1"
+compatibility_date = "2025-02-14"
+
+[assets]
+directory = "./out"
+binding = "ASSETS"
+run_worker_first = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "cambridge-maths-db"
+database_id = "3bca9069-8f16-415f-8386-8c6f387c0fda"
+
+[vars]
+JWT_SECRET = "cambridge_maths_super_secure_jwt_secret_change_in_production_2026"

@@ -1,25 +1,53 @@
-import React from 'react';
-import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth';
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import AdminSidebar from '@/components/layout/AdminSidebar';
 
-export const dynamic = 'force-dynamic';
-
-export default async function AdminLayout({
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getCurrentUser();
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!user) {
-    redirect('/login');
-  }
+  useEffect(() => {
+    fetch('/api/portal?view=admin-layout')
+      .then(async (res) => {
+        if (res.status === 401) {
+          router.replace('/login');
+          return null;
+        }
+        if (res.status === 403) {
+          router.replace('/student/home');
+          return null;
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (data?.user) {
+          setUser(data.user);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        router.replace('/login');
+      });
+  }, [router]);
 
-  // Strict server-side RBAC check
-  const isAuthorizedTeacher = user.role === 'TEACHER' || user.role === 'ADMIN';
-  if (!isAuthorizedTeacher) {
-    redirect('/student/home');
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen bg-ivory-100 flex items-center justify-center text-slate-muted">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-slate-muted text-sage-300 flex items-center justify-center font-bold font-mono animate-pulse">
+            ∑
+          </div>
+          <p className="text-xs font-semibold text-slate-soft">Loading Instructor Workspace...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

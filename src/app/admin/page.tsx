@@ -1,67 +1,49 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getCurrentUser } from '@/lib/auth';
-import prisma from '@/lib/prisma';
 import {
   Users,
   BookOpen,
   CheckSquare,
   Mail,
   ArrowRight,
-  Clock,
-  Award,
   Sparkles,
   CalendarCheck,
   Megaphone,
   CheckCircle2
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
+export default function AdminDashboardPage() {
+  const [data, setData] = useState<any>(null);
 
-export default async function AdminDashboardPage() {
-  const user = await getCurrentUser();
-  if (!user) return null;
+  useEffect(() => {
+    fetch('/api/portal?view=admin-dashboard')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((res) => {
+        if (res) setData(res);
+      })
+      .catch(console.error);
+  }, []);
 
-  // Real database metrics
-  const [
-    totalStudents,
-    totalSubjects,
-    totalAssignments,
-    pendingSubmissionsCount,
-    totalInquiries,
-    recentSubmissions,
-  ] = await Promise.all([
-    prisma.user.count({ where: { role: 'STUDENT' } }),
-    prisma.subject.count(),
-    prisma.assignment.count(),
-    prisma.submission.count({
-      where: {
-        status: { in: ['SUBMITTED', 'LATE'] },
-      },
-    }),
-    prisma.contactInquiry.count({ where: { status: 'NEW' } }),
-    prisma.submission.findMany({
-      where: {
-        status: { in: ['SUBMITTED', 'LATE'] },
-      },
-      include: {
-        student: true,
-        assignment: {
-          include: { subject: true },
-        },
-        versions: {
-          orderBy: { versionNumber: 'desc' },
-          take: 1,
-        },
-      },
-      orderBy: { submittedAt: 'desc' },
-      take: 5,
-    }),
-  ]);
+  if (!data) {
+    return (
+      <div className="py-12 text-center text-xs text-slate-light font-medium">
+        Loading instructor administration hub...
+      </div>
+    );
+  }
+
+  const {
+    totalStudents = 0,
+    totalSubjects = 0,
+    pendingSubmissionsCount = 0,
+    totalInquiries = 0,
+    recentSubmissions = [],
+  } = data;
 
   return (
     <div className="space-y-8">
-      {/* Top Header */}
       <div>
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sage-200 text-slate-800 text-xs font-bold uppercase tracking-wider mb-2">
           <span>Instructor Administration</span>
@@ -74,7 +56,6 @@ export default async function AdminDashboardPage() {
         </p>
       </div>
 
-      {/* 4 Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <div className="bg-white p-5 rounded-2xl border border-sage-200 subtle-paper-shadow">
           <div className="flex items-center justify-between">
@@ -121,7 +102,6 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Quick Action Buttons */}
       <div className="bg-white p-6 rounded-3xl border border-sage-200 subtle-paper-shadow">
         <h3 className="text-sm font-bold uppercase tracking-wider text-slate-muted mb-4">Quick Management Actions</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -163,7 +143,6 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Submissions Pending Evaluation */}
       <div className="bg-white rounded-3xl border border-sage-200 p-6 sm:p-7 subtle-paper-shadow">
         <div className="flex items-center justify-between pb-4 border-b border-sage-200">
           <div>
@@ -187,23 +166,23 @@ export default async function AdminDashboardPage() {
               <p>All student work has been graded and published.</p>
             </div>
           ) : (
-            recentSubmissions.map((sub) => {
-              const latestVer = sub.versions[0];
+            recentSubmissions.map((sub: any) => {
+              const latestVer = sub.versions?.[0];
               return (
                 <div key={sub.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-ivory-200 text-slate-soft">
-                        {sub.assignment.subject.name}
+                        {sub.assignment?.subject?.name}
                       </span>
-                      <span className="text-xs font-bold text-slate-muted">{sub.student.fullName}</span>
+                      <span className="text-xs font-bold text-slate-muted">{sub.student?.fullName}</span>
                       {sub.status === 'LATE' && (
                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
                           Late
                         </span>
                       )}
                     </div>
-                    <h4 className="text-sm font-semibold text-slate-muted mt-1">{sub.assignment.title}</h4>
+                    <h4 className="text-sm font-semibold text-slate-muted mt-1">{sub.assignment?.title}</h4>
                     <p className="text-xs text-slate-light mt-0.5">
                       Submitted: {new Date(sub.submittedAt || sub.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} • File: {latestVer?.fileName || 'Attached solution'}
                     </p>

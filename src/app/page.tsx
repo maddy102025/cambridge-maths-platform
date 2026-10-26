@@ -1,15 +1,12 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import PublicNavbar from '@/components/layout/PublicNavbar';
 import PublicFooter from '@/components/layout/PublicFooter';
 import ContactSection from '@/components/home/ContactSection';
-import prisma from '@/lib/prisma';
 import {
   ArrowRight,
-  BookOpen,
-  Award,
-  CheckCircle,
   Calculator,
   Compass,
   BarChart2,
@@ -17,21 +14,82 @@ import {
   Sigma,
   Pi,
   GraduationCap,
-  Sparkles,
-  Target,
   FileCheck,
   TrendingUp,
   BrainCircuit,
   UserCheck
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
+const DEFAULT_SUBJECTS = [
+  {
+    id: 'sub-math-4024',
+    code: 'MATH-4024',
+    name: 'Mathematics',
+    syllabusInfo: 'Cambridge O Level, Syllabus D (4024 / 4025)',
+    description: 'Comprehensive mastery of algebra, geometry, trigonometry, number theory, and data handling tailored for Cambridge O Level Syllabus D examinations.',
+    level: 'O Level',
+    scheduleInfo: 'Tuesdays & Thursdays, 4:30 PM - 6:00 PM GMT',
+  },
+  {
+    id: 'sub-amath-4037',
+    code: 'AMATH-4037',
+    name: 'Additional Mathematics',
+    syllabusInfo: 'Cambridge O Level (4037)',
+    description: 'Rigorous preparation in advanced algebraic techniques, logarithmic functions, quadratic equations, coordinate geometry, and introductory calculus.',
+    level: 'O Level',
+    scheduleInfo: 'Mondays & Wednesdays, 5:00 PM - 6:30 PM GMT',
+  },
+  {
+    id: 'sub-pure-9709',
+    code: 'PURE-9709',
+    name: 'Pure Mathematics',
+    syllabusInfo: 'Cambridge International A Level (Papers 1, 2, and 3)',
+    description: 'In-depth exploration of differential calculus, integration methods, complex numbers, vectors, trigonometry, and differential equations.',
+    level: 'A Level',
+    scheduleInfo: 'Saturdays, 10:00 AM - 12:30 PM GMT',
+  },
+  {
+    id: 'sub-mech-9709',
+    code: 'MECH-9709',
+    name: 'Mechanics',
+    syllabusInfo: 'Cambridge International A Level (Paper 4)',
+    description: 'Mathematical modelling of physical systems: kinematics in linear motion, Newton’s laws of motion, work, energy, power, friction, and equilibrium.',
+    level: 'A Level',
+    scheduleInfo: 'Sundays, 2:00 PM - 4:00 PM GMT',
+  },
+  {
+    id: 'sub-stat-9709',
+    code: 'STAT-9709',
+    name: 'Probability & Statistics',
+    syllabusInfo: 'Cambridge International A Level (Papers 1 and 2)',
+    description: 'Permutations, combinations, discrete random variables, continuous probability distributions, normal distributions, and hypothesis testing.',
+    level: 'A Level',
+    scheduleInfo: 'Fridays, 4:30 PM - 6:30 PM GMT',
+  },
+  {
+    id: 'sub-further-9231',
+    code: 'FURTHER-9231',
+    name: 'Further Mathematics',
+    syllabusInfo: 'Cambridge International A Level (9231)',
+    description: 'Elite mathematical concepts for aspiring engineering, mathematics, and physics scholars: matrices, hyperbolic functions, and rational functions.',
+    level: 'A Level',
+    scheduleInfo: 'By Special Arrangement & Individual Mentorship',
+  },
+];
 
-export default async function HomePage() {
-  // Fetch subjects from database or fallback to standard Cambridge list
-  const subjects = await prisma.subject.findMany({
-    orderBy: { orderIndex: 'asc' },
-  });
+export default function HomePage() {
+  const [subjects, setSubjects] = useState<any[]>(DEFAULT_SUBJECTS);
+
+  useEffect(() => {
+    fetch('/api/portal?view=public')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.subjects?.length) {
+          setSubjects(data.subjects);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-ivory-100 selection:bg-sage-300 selection:text-slate-900">
@@ -102,11 +160,9 @@ export default async function HomePage() {
             {/* Right Side: Sophisticated Teacher Portrait & Mathematical Annotations */}
             <div className="lg:col-span-5 relative flex justify-center">
               <div className="relative w-full max-w-md">
-                {/* Decorative background geometry */}
                 <div className="absolute -top-6 -left-6 w-32 h-32 rounded-full border border-sage-300/60 -z-10" />
                 <div className="absolute -bottom-8 -right-8 w-44 h-44 rounded-3xl bg-sage-200/50 -z-10 rotate-6" />
 
-                {/* Mathematical Floating Badges / Annotations */}
                 <div className="absolute -top-4 -right-2 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-xl shadow-md border border-sage-200 text-xs font-mono text-slate-muted z-20 flex items-center gap-2">
                   <span className="text-sage-700 font-bold">∫</span>
                   <span>f(x) dx = F(x) + C</span>
@@ -116,17 +172,14 @@ export default async function HomePage() {
                   <span className="text-sage-700 font-bold">e^(iπ) + 1 = 0</span>
                 </div>
 
-                {/* Main Card with Portrait Placeholder */}
                 <div className="relative rounded-3xl overflow-hidden bg-white border border-sage-300/80 subtle-paper-shadow p-3">
                   <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-ivory-200 flex flex-col justify-end">
-                    {/* Portrait Image Placeholder */}
                     <img
                       src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80"
                       alt="Ms. Eleanor Vance - Cambridge Mathematics Teacher"
                       className="w-full h-full object-cover object-top"
                     />
 
-                    {/* Gradient Overlay and Caption */}
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-900/90 via-slate-900/50 to-transparent p-5 text-white">
                       <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-sage-300" />
@@ -219,7 +272,6 @@ export default async function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {subjects.map((subject, idx) => {
-              // Dynamic icon representation
               const icons = [Calculator, Sigma, Pi, Compass, BarChart2, Atom];
               const IconComponent = icons[idx % icons.length];
 

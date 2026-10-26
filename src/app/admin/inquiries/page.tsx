@@ -1,20 +1,29 @@
-import React from 'react';
-import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth';
-import prisma from '@/lib/prisma';
-import { Mail, Phone, Calendar, CheckCircle2, Clock } from 'lucide-react';
+'use client';
 
-export const dynamic = 'force-dynamic';
+import React, { useEffect, useState } from 'react';
+import { Mail, Phone } from 'lucide-react';
 
-export default async function AdminInquiriesPage() {
-  const user = await getCurrentUser();
-  if (!user || (user.role !== 'TEACHER' && user.role !== 'ADMIN')) {
-    redirect('/login');
+export default function AdminInquiriesPage() {
+  const [data, setData] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/api/portal?view=admin-inquiries')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((res) => {
+        if (res) setData(res);
+      })
+      .catch(console.error);
+  }, []);
+
+  if (!data) {
+    return (
+      <div className="py-12 text-center text-xs text-slate-light font-medium">
+        Loading contact inquiries...
+      </div>
+    );
   }
 
-  const inquiries = await prisma.contactInquiry.findMany({
-    orderBy: { createdAt: 'desc' },
-  });
+  const inquiries = data.inquiries || [];
 
   return (
     <div className="space-y-6">
@@ -36,7 +45,7 @@ export default async function AdminInquiriesPage() {
           <p className="text-xs text-slate-light py-8 text-center">No inquiries received yet.</p>
         ) : (
           <div className="divide-y divide-sage-100">
-            {inquiries.map((inq) => (
+            {inquiries.map((inq: any) => (
               <div key={inq.id} className="py-4 space-y-2 text-xs">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="flex items-center gap-2">

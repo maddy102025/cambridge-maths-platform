@@ -2,6 +2,11 @@
 
 A modern, responsive educational web application combining a professional Cambridge Mathematics teacher portfolio and course enrollment landing page with a secure, authenticated student Learning Management System (LMS) and teacher management portal.
 
+**Live Production Deployment (Cloudflare Workers + D1):**
+- **Live URL:** [https://cambridge-maths-platform.rimo777.workers.dev](https://cambridge-maths-platform.rimo777.workers.dev)
+- **Cloudflare Worker Name:** `cambridge-maths-platform`
+- **Cloudflare D1 Database:** `cambridge-maths-db` (`3bca9069-8f16-415f-8386-8c6f387c0fda`)
+
 ---
 
 ## 1. Design System & Visual Identity
@@ -120,9 +125,31 @@ The platform adheres to an academic pastel color palette:
 
 ---
 
-## 5. Production Database Deployment (Supabase / PostgreSQL)
+## 5. Cloudflare Workers + D1 Production Deployment
 
-To switch from the default local SQLite database to Supabase or PostgreSQL:
+The application is architected to deploy natively to **Cloudflare Workers + Static Assets + Cloudflare D1**:
+- **Frontend**: Next.js static export (`output: 'export'` when `BUILD_TARGET=cloudflare`) served at the edge via Cloudflare Workers Static Assets (`[assets]` binding in `wrangler.toml`).
+- **Backend API & Auth (`cloudflare/worker.ts`)**: Full edge API handling `/api/portal`, `/api/auth/*`, `/api/student/*`, `/api/admin/*`, `/api/contact`, and `/uploads/*` backed directly by Cloudflare D1 (`env.DB`) and Web Crypto PBKDF2 / `bcryptjs` + `jose` JWT HTTP-only cookies.
+- **File Uploads on Edge**: Student assignment submissions and teacher resource uploads are stored in the D1 `FileStorage` table (`base64Data`) and served dynamically at `/uploads/:fileName` with proper MIME types and Content-Disposition headers.
+- **Database Schema & Seed**: Located in `cloudflare/d1-schema.sql` (generated via `prisma/export-d1.ts`).
+
+### Cloudflare Deployment Commands
+```bash
+# 1. Build static frontend for Cloudflare
+pnpm run build:cf
+
+# 2. Deploy Worker + Static Assets + D1 binding to Cloudflare
+pnpm run deploy:cf
+```
+
+### Continuous Deployment (GitHub Actions)
+A workflow is configured in `.github/workflows/deploy.yml` to automatically build and deploy to Cloudflare Workers on every push to `main`.
+
+---
+
+## 6. Alternative Database Deployment (Supabase / PostgreSQL)
+
+To switch from the local SQLite / Cloudflare D1 database to Supabase or PostgreSQL:
 
 1. Update `.env`:
    ```env

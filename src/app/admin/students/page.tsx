@@ -1,32 +1,27 @@
-import React from 'react';
-import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth';
-import prisma from '@/lib/prisma';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import StudentManagementView from '@/components/admin/StudentManagementView';
 
-export const dynamic = 'force-dynamic';
+export default function AdminStudentsPage() {
+  const [data, setData] = useState<any>(null);
 
-export default async function AdminStudentsPage() {
-  const user = await getCurrentUser();
-  if (!user || (user.role !== 'TEACHER' && user.role !== 'ADMIN')) {
-    redirect('/login');
+  useEffect(() => {
+    fetch('/api/portal?view=admin-students')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((res) => {
+        if (res) setData(res);
+      })
+      .catch(console.error);
+  }, []);
+
+  if (!data) {
+    return (
+      <div className="py-12 text-center text-xs text-slate-light font-medium">
+        Loading student roster...
+      </div>
+    );
   }
 
-  const [students, allSubjects] = await Promise.all([
-    prisma.user.findMany({
-      where: { role: 'STUDENT' },
-      include: {
-        enrollments: {
-          include: { subject: true },
-        },
-        attendance: true,
-      },
-      orderBy: { fullName: 'asc' },
-    }),
-    prisma.subject.findMany({
-      orderBy: { orderIndex: 'asc' },
-    }),
-  ]);
-
-  return <StudentManagementView students={students} allSubjects={allSubjects} />;
+  return <StudentManagementView students={data.students || []} allSubjects={data.allSubjects || []} />;
 }

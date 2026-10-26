@@ -1,54 +1,76 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
-import { getCurrentUser } from '@/lib/auth';
-import prisma from '@/lib/prisma';
+import { useSearchParams } from 'next/navigation';
+import SubjectDetailView from '@/components/modules/SubjectDetailView';
 import {
   BookOpen,
   Video,
   FileText,
   CheckSquare,
   ArrowRight,
-  Clock,
-  Calendar,
-  Sparkles,
-  Lock
+  Lock,
+  ArrowLeft
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
+function ModulesContent() {
+  const searchParams = useSearchParams();
+  const selectedId = searchParams.get('id');
 
-export default async function StudentModulesPage() {
-  const user = await getCurrentUser();
-  if (!user) return null;
+  const [data, setData] = useState<any>(null);
+  const [detailData, setDetailData] = useState<any>(null);
 
-  // Fetch enrolled subjects
-  const enrollments = await prisma.studentEnrollment.findMany({
-    where: { studentId: user.id, status: 'ACTIVE' },
-    include: {
-      subject: {
-        include: {
-          lessons: true,
-          materials: true,
-          assignments: {
-            include: {
-              submissions: {
-                where: { studentId: user.id },
-              },
-            },
-          },
-        },
-      },
-    },
-  });
+  useEffect(() => {
+    if (selectedId) {
+      setDetailData(null);
+      fetch(`/api/portal?view=student-module-detail&id=${encodeURIComponent(selectedId)}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((res) => {
+          if (res) setDetailData(res);
+        })
+        .catch(console.error);
+    } else {
+      fetch('/api/portal?view=student-modules')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((res) => {
+          if (res) setData(res);
+        })
+        .catch(console.error);
+    }
+  }, [selectedId]);
 
-  const enrolledSubjectIds = enrollments.map((e) => e.subjectId);
+  if (selectedId) {
+    if (!detailData) {
+      return (
+        <div className="py-12 text-center text-xs text-slate-light font-medium">
+          Loading module debrief and study drops...
+        </div>
+      );
+    }
+    return (
+      <div className="space-y-4">
+        <Link
+          href="/student/modules"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-soft hover:text-slate-900"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Back to All Modules</span>
+        </Link>
+        <SubjectDetailView subject={detailData.subject} userRole={detailData.userRole} />
+      </div>
+    );
+  }
 
-  // Fetch other subjects available in the platform
-  const otherSubjects = await prisma.subject.findMany({
-    where: {
-      id: { notIn: enrolledSubjectIds },
-      isAvailable: true,
-    },
-  });
+  if (!data) {
+    return (
+      <div className="py-12 text-center text-xs text-slate-light font-medium">
+        Loading enrolled modules...
+      </div>
+    );
+  }
+
+  const { enrollments = [], otherSubjects = [] } = data;
 
   return (
     <div className="space-y-8">
@@ -78,12 +100,12 @@ export default async function StudentModulesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {enrollments.map((enrollment) => {
+            {enrollments.map((enrollment: any) => {
               const sub = enrollment.subject;
-              const completedAssignments = sub.assignments.filter(
-                (a) => a.submissions.length > 0 && a.submissions[0].status !== 'NOT_STARTED'
+              const completedAssignments = (sub.assignments || []).filter(
+                (a: any) => a.submissions && a.submissions.length > 0 && a.submissions[0].status !== 'NOT_STARTED'
               ).length;
-              const totalAssignments = sub.assignments.length;
+              const totalAssignments = (sub.assignments || []).length;
               const progressPercentage =
                 totalAssignments > 0
                   ? Math.round((completedAssignments / totalAssignments) * 100)
@@ -115,12 +137,11 @@ export default async function StudentModulesPage() {
                       {sub.description}
                     </p>
 
-                    {/* Stats pills */}
                     <div className="pt-2 grid grid-cols-3 gap-2 text-center text-xs">
                       <div className="p-2 rounded-xl bg-ivory-100 border border-sage-100">
                         <div className="font-bold text-slate-muted flex items-center justify-center gap-1">
                           <Video className="w-3.5 h-3.5 text-slate-soft" />
-                          <span>{sub.lessons.length}</span>
+                          <span>{sub.lessons?.length || 0}</span>
                         </div>
                         <div className="text-[10px] text-slate-light mt-0.5">Lessons</div>
                       </div>
@@ -128,7 +149,7 @@ export default async function StudentModulesPage() {
                       <div className="p-2 rounded-xl bg-ivory-100 border border-sage-100">
                         <div className="font-bold text-slate-muted flex items-center justify-center gap-1">
                           <FileText className="w-3.5 h-3.5 text-slate-soft" />
-                          <span>{sub.materials.length}</span>
+                          <span>{sub.materials?.length || 0}</span>
                         </div>
                         <div className="text-[10px] text-slate-light mt-0.5">Drops</div>
                       </div>
@@ -136,13 +157,12 @@ export default async function StudentModulesPage() {
                       <div className="p-2 rounded-xl bg-ivory-100 border border-sage-100">
                         <div className="font-bold text-slate-muted flex items-center justify-center gap-1">
                           <CheckSquare className="w-3.5 h-3.5 text-slate-soft" />
-                          <span>{sub.assignments.length}</span>
+                          <span>{sub.assignments?.length || 0}</span>
                         </div>
                         <div className="text-[10px] text-slate-light mt-0.5">Quests</div>
                       </div>
                     </div>
 
-                    {/* Progress Bar */}
                     <div className="pt-2">
                       <div className="flex items-center justify-between text-xs mb-1">
                         <span className="text-slate-light font-medium">Assignment Progress</span>
@@ -162,7 +182,7 @@ export default async function StudentModulesPage() {
                       Instructor: {sub.instructorName}
                     </span>
                     <Link
-                      href={`/student/modules/${sub.id}`}
+                      href={`/student/modules?id=${sub.id}`}
                       className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-900 bg-sage-300 hover:bg-sage-400 rounded-xl transition-all shadow-xs"
                     >
                       <span>Enter Module</span>
@@ -187,7 +207,7 @@ export default async function StudentModulesPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {otherSubjects.map((sub) => (
+            {otherSubjects.map((sub: any) => (
               <div
                 key={sub.id}
                 className="bg-white/70 rounded-3xl border border-sage-200/60 p-6 flex flex-col justify-between"
@@ -225,5 +245,13 @@ export default async function StudentModulesPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function StudentModulesPage() {
+  return (
+    <Suspense fallback={<div className="py-12 text-center text-xs text-slate-light">Loading modules...</div>}>
+      <ModulesContent />
+    </Suspense>
   );
 }

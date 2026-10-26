@@ -1,44 +1,32 @@
-import React from 'react';
-import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth';
-import prisma from '@/lib/prisma';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import HeadsUpView from '@/components/headsup/HeadsUpView';
 
-export const dynamic = 'force-dynamic';
+export default function HeadsUpPage() {
+  const [data, setData] = useState<any>(null);
 
-export default async function HeadsUpPage() {
-  const user = await getCurrentUser();
-  if (!user) redirect('/login');
+  useEffect(() => {
+    fetch('/api/portal?view=student-heads-up')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((res) => {
+        if (res) setData(res);
+      })
+      .catch(console.error);
+  }, []);
 
-  // Enrolled subjects
-  const enrollments = await prisma.studentEnrollment.findMany({
-    where: { studentId: user.id },
-    select: { subjectId: true },
-  });
-  const subjectIds = enrollments.map((e) => e.subjectId);
-
-  // Fetch announcements (all school + enrolled subjects)
-  const announcements = await prisma.announcement.findMany({
-    where: {
-      OR: [
-        { subjectId: null },
-        { subjectId: { in: subjectIds } },
-      ],
-    },
-    include: { subject: true },
-    orderBy: { publishedAt: 'desc' },
-  });
-
-  // Fetch notifications for user
-  const notifications = await prisma.notification.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: 'desc' },
-  });
+  if (!data) {
+    return (
+      <div className="py-12 text-center text-xs text-slate-light font-medium">
+        Loading announcements & notifications...
+      </div>
+    );
+  }
 
   return (
     <HeadsUpView
-      notifications={notifications}
-      announcements={announcements}
+      notifications={data.notifications || []}
+      announcements={data.announcements || []}
     />
   );
 }

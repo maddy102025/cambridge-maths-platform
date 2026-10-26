@@ -8,28 +8,32 @@
     "start": "next start",
     "lint": "next lint",
     "db:push": "prisma db push",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "build:cf": "node scripts/build-cf.mjs",
+    "deploy:cf": "node scripts/build-cf.mjs && node scripts/deploy-cf.mjs",
+    "dev:cf": "wrangler dev"
   },
   "dependencies": {
-    "next": "^15.1.7",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "lucide-react": "^1.16.0",
+    "@prisma/client": "^6.4.1",
     "bcryptjs": "^3.0.3",
     "jose": "^6.0.8",
-    "@prisma/client": "^6.4.1"
+    "lucide-react": "^1.16.0",
+    "next": "^15.1.7",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.7.3",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.13.0",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
-    "@types/bcryptjs": "^2.4.6",
-    "postcss": "^8.5.1",
-    "tailwindcss": "^3.4.17",
     "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.1",
     "prisma": "^6.4.1",
-    "tsx": "^4.19.2"
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "wrangler": "^4.152.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

@@ -1,26 +1,31 @@
-import React from 'react';
-import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth';
-import prisma from '@/lib/prisma';
-import { User, Mail, Phone, ShieldCheck, Award, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
+'use client';
 
-export const dynamic = 'force-dynamic';
+import React, { useEffect, useState } from 'react';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 
-export default async function StudentProfilePage() {
-  const user = await getCurrentUser();
-  if (!user) redirect('/login');
+export default function StudentProfilePage() {
+  const [data, setData] = useState<any>(null);
 
-  const enrollments = await prisma.studentEnrollment.findMany({
-    where: { studentId: user.id },
-    include: { subject: true },
-  });
+  useEffect(() => {
+    fetch('/api/portal?view=student-profile')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((res) => {
+        if (res) setData(res);
+      })
+      .catch(console.error);
+  }, []);
 
-  const attendanceRecords = await prisma.attendanceRecord.findMany({
-    where: { studentId: user.id },
-  });
+  if (!data) {
+    return (
+      <div className="py-12 text-center text-xs text-slate-light font-medium">
+        Loading profile settings...
+      </div>
+    );
+  }
 
+  const { user, enrollments = [], attendanceRecords = [] } = data;
   const totalClasses = attendanceRecords.length;
-  const attendedClasses = attendanceRecords.filter((a) => a.status === 'PRESENT').length;
+  const attendedClasses = attendanceRecords.filter((a: any) => a.status === 'PRESENT').length;
 
   return (
     <div className="space-y-8 max-w-4xl">
@@ -36,7 +41,7 @@ export default async function StudentProfilePage() {
       <div className="bg-white rounded-3xl border border-sage-200 p-6 sm:p-8 subtle-paper-shadow space-y-6">
         <div className="flex items-center gap-4 pb-6 border-b border-sage-200">
           <div className="w-16 h-16 rounded-2xl bg-sage-300 text-slate-900 font-bold text-2xl flex items-center justify-center font-mono">
-            {user.fullName.split(' ').map((n) => n[0]).join('').substring(0, 2)}
+            {user.fullName.split(' ').map((n: string) => n[0]).join('').substring(0, 2)}
           </div>
           <div>
             <h2 className="text-xl font-bold text-slate-muted">{user.fullName}</h2>
@@ -52,7 +57,6 @@ export default async function StudentProfilePage() {
           </div>
         </div>
 
-        {/* Credentials Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div className="p-4 rounded-2xl bg-ivory-50 border border-sage-200 space-y-1">
             <span className="text-xs font-semibold text-slate-light uppercase">Email Address</span>
@@ -95,18 +99,17 @@ export default async function StudentProfilePage() {
           </div>
         </div>
 
-        {/* Enrolled Courses */}
         <div className="pt-4 border-t border-sage-200 space-y-3">
           <h3 className="font-bold text-slate-muted text-sm">Active Enrolled Subjects</h3>
           <div className="space-y-2">
-            {enrollments.map((enr) => (
+            {enrollments.map((enr: any) => (
               <div
                 key={enr.id}
                 className="p-3.5 rounded-xl border border-sage-200 flex items-center justify-between text-xs"
               >
                 <div>
-                  <span className="font-bold text-slate-muted">{enr.subject.name}</span>
-                  <p className="text-[11px] text-slate-light">{enr.subject.syllabusInfo}</p>
+                  <span className="font-bold text-slate-muted">{enr.subject?.name}</span>
+                  <p className="text-[11px] text-slate-light">{enr.subject?.syllabusInfo}</p>
                 </div>
                 <span className="px-2.5 py-1 rounded-md bg-sage-100 text-slate-800 font-semibold text-[11px]">
                   Enrolled {new Date(enr.enrolledAt).toLocaleDateString('en-GB')}

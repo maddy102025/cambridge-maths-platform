@@ -1,50 +1,45 @@
-import React from 'react';
-import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth';
-import prisma from '@/lib/prisma';
+'use client';
+
+import React, { useEffect, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import AssignmentGradingView from '@/components/admin/AssignmentGradingView';
 
-export const dynamic = 'force-dynamic';
+function AssignmentsContent() {
+  const searchParams = useSearchParams();
+  const submissionId = searchParams.get('submissionId') || undefined;
+  const [data, setData] = useState<any>(null);
 
-export default async function AdminAssignmentsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ submissionId?: string }>;
-}) {
-  const { submissionId } = await searchParams;
-  const user = await getCurrentUser();
-  if (!user || (user.role !== 'TEACHER' && user.role !== 'ADMIN')) {
-    redirect('/login');
+  useEffect(() => {
+    fetch('/api/portal?view=admin-assignments')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((res) => {
+        if (res) setData(res);
+      })
+      .catch(console.error);
+  }, []);
+
+  if (!data) {
+    return (
+      <div className="py-12 text-center text-xs text-slate-light font-medium">
+        Loading assignments and grading station...
+      </div>
+    );
   }
-
-  const [assignments, allSubjects, allSubmissions] = await Promise.all([
-    prisma.assignment.findMany({
-      include: { subject: true },
-      orderBy: { createdAt: 'desc' },
-    }),
-    prisma.subject.findMany({
-      orderBy: { orderIndex: 'asc' },
-    }),
-    prisma.submission.findMany({
-      include: {
-        student: true,
-        assignment: {
-          include: { subject: true },
-        },
-        versions: {
-          orderBy: { versionNumber: 'desc' },
-        },
-      },
-      orderBy: { submittedAt: 'desc' },
-    }),
-  ]);
 
   return (
     <AssignmentGradingView
-      assignments={assignments}
-      allSubjects={allSubjects}
-      allSubmissions={allSubmissions}
+      assignments={data.assignments || []}
+      allSubjects={data.allSubjects || []}
+      allSubmissions={data.allSubmissions || []}
       initialSubmissionId={submissionId}
     />
+  );
+}
+
+export default function AdminAssignmentsPage() {
+  return (
+    <Suspense fallback={<div className="py-12 text-center text-xs text-slate-light">Loading assignments...</div>}>
+      <AssignmentsContent />
+    </Suspense>
   );
 }

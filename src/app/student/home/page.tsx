@@ -1,7 +1,7 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getCurrentUser } from '@/lib/auth';
-import prisma from '@/lib/prisma';
 import {
   Award,
   CalendarCheck,
@@ -9,111 +9,57 @@ import {
   CheckCircle,
   Clock,
   ArrowRight,
-  BookOpen,
   FileText,
-  AlertCircle,
   ChevronRight,
-  TrendingUp,
   MessageSquare
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
+export default function StudentHomePage() {
+  const [data, setData] = useState<any>(null);
 
-export default async function StudentHomePage() {
-  const user = await getCurrentUser();
-  if (!user) return null;
+  useEffect(() => {
+    fetch('/api/portal?view=student-home')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((res) => {
+        if (res) setData(res);
+      })
+      .catch(console.error);
+  }, []);
 
-  // 1. Fetch Student Enrollments
-  const enrollments = await prisma.studentEnrollment.findMany({
-    where: { studentId: user.id, status: 'ACTIVE' },
-    include: {
-      subject: {
-        include: {
-          lessons: true,
-          materials: true,
-          assignments: true,
-        },
-      },
-    },
-  });
+  if (!data) {
+    return (
+      <div className="py-12 text-center text-xs text-slate-light font-medium">
+        Loading performance summary...
+      </div>
+    );
+  }
 
-  const enrolledSubjectIds = enrollments.map((e) => e.subjectId);
-
-  // 2. Fetch Actual Attendance Records for this student
-  const attendanceRecords = await prisma.attendanceRecord.findMany({
-    where: { studentId: user.id },
-  });
+  const {
+    user,
+    enrollments = [],
+    attendanceRecords = [],
+    allAssignments = [],
+    recentGrades = [],
+    recentMaterials = [],
+  } = data;
 
   const totalClassesRecorded = attendanceRecords.length;
-  const classesAttended = attendanceRecords.filter((a) => a.status === 'PRESENT').length;
+  const classesAttended = attendanceRecords.filter((a: any) => a.status === 'PRESENT').length;
   const attendancePercentage =
     totalClassesRecorded > 0
       ? Math.round((classesAttended / totalClassesRecorded) * 100)
       : 100;
 
-  // 3. Fetch Assignments for Enrolled Subjects
-  const allAssignments = await prisma.assignment.findMany({
-    where: { subjectId: { in: enrolledSubjectIds } },
-    include: {
-      subject: true,
-      submissions: {
-        where: { studentId: user.id },
-      },
-    },
-    orderBy: { dueDate: 'asc' },
-  });
-
   const totalAssignmentsCount = allAssignments.length;
   const submittedAssignments = allAssignments.filter(
-    (a) => a.submissions.length > 0 && a.submissions[0].status !== 'NOT_STARTED'
+    (a: any) => a.submissions && a.submissions.length > 0 && a.submissions[0].status !== 'NOT_STARTED'
   );
   const completedAssignmentsCount = submittedAssignments.length;
   const pendingAssignmentsCount = totalAssignmentsCount - completedAssignmentsCount;
 
-  // Upcoming deadlines (assignments not yet submitted or graded)
   const upcomingTasks = allAssignments
-    .filter((a) => a.submissions.length === 0 || a.submissions[0].status === 'NOT_STARTED')
+    .filter((a: any) => !a.submissions || a.submissions.length === 0 || a.submissions[0].status === 'NOT_STARTED')
     .slice(0, 4);
-
-  // 4. Fetch Recent Teacher Feedback / Graded Work
-  const recentGrades = await prisma.submission.findMany({
-    where: {
-      studentId: user.id,
-      isPublished: true,
-      gradeScore: { not: null },
-    },
-    include: {
-      assignment: {
-        include: { subject: true },
-      },
-    },
-    orderBy: { gradedAt: 'desc' },
-    take: 3,
-  });
-
-  // 5. Fetch Recent Study Drops
-  const recentMaterials = await prisma.studyMaterial.findMany({
-    where: {
-      subjectId: { in: enrolledSubjectIds },
-      isPublicToClass: true,
-    },
-    include: { subject: true },
-    orderBy: { createdAt: 'desc' },
-    take: 4,
-  });
-
-  // 6. Fetch Latest Announcements
-  const recentAnnouncements = await prisma.announcement.findMany({
-    where: {
-      OR: [
-        { subjectId: null },
-        { subjectId: { in: enrolledSubjectIds } },
-      ],
-    },
-    include: { subject: true },
-    orderBy: { publishedAt: 'desc' },
-    take: 3,
-  });
 
   return (
     <div className="space-y-8">
@@ -162,7 +108,6 @@ export default async function StudentHomePage() {
                 ({attendancePercentage}%)
               </span>
             </div>
-            {/* Progress bar */}
             <div className="mt-3 w-full bg-ivory-200 h-2 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full ${
@@ -220,7 +165,6 @@ export default async function StudentHomePage() {
 
       {/* SECTION B & C: UPCOMING TASKS & ENROLLED MODULES */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column (7 cols): Upcoming Tasks */}
         <div className="lg:col-span-7 space-y-6">
           <div className="bg-white rounded-3xl border border-sage-200 p-6 sm:p-7 subtle-paper-shadow">
             <div className="flex items-center justify-between pb-4 border-b border-sage-200">
@@ -245,7 +189,7 @@ export default async function StudentHomePage() {
                   <p className="text-xs text-slate-light mt-0.5">No pending assignment deadlines at the moment.</p>
                 </div>
               ) : (
-                upcomingTasks.map((task) => {
+                upcomingTasks.map((task: any) => {
                   const dueDate = new Date(task.dueDate);
                   const isUrgent = dueDate.getTime() - Date.now() < 48 * 3600 * 1000;
                   return (
@@ -253,7 +197,7 @@ export default async function StudentHomePage() {
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-ivory-200 text-slate-soft border border-sage-200">
-                            {task.subject.name}
+                            {task.subject?.name}
                           </span>
                           {isUrgent && (
                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
@@ -281,7 +225,6 @@ export default async function StudentHomePage() {
             </div>
           </div>
 
-          {/* Recent Teacher Feedback & Grades Published */}
           <div className="bg-white rounded-3xl border border-sage-200 p-6 sm:p-7 subtle-paper-shadow">
             <div className="flex items-center justify-between pb-4 border-b border-sage-200">
               <div className="flex items-center gap-2">
@@ -297,14 +240,14 @@ export default async function StudentHomePage() {
                   No graded submissions published yet. Check back once your teacher marks your work.
                 </p>
               ) : (
-                recentGrades.map((grade) => (
+                recentGrades.map((grade: any) => (
                   <div key={grade.id} className="py-4 space-y-2">
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-xs font-medium text-slate-light">
-                          {grade.assignment.subject.name}
+                          {grade.assignment?.subject?.name}
                         </span>
-                        <h4 className="text-sm font-bold text-slate-muted">{grade.assignment.title}</h4>
+                        <h4 className="text-sm font-bold text-slate-muted">{grade.assignment?.title}</h4>
                       </div>
                       <div className="text-right">
                         <span className="text-lg font-bold text-slate-muted font-mono">
@@ -328,9 +271,7 @@ export default async function StudentHomePage() {
           </div>
         </div>
 
-        {/* Right Column (5 cols): Enrolled Modules & Study Drops */}
         <div className="lg:col-span-5 space-y-6">
-          {/* Enrolled Subjects */}
           <div className="bg-white rounded-3xl border border-sage-200 p-6 subtle-paper-shadow">
             <div className="flex items-center justify-between pb-4 border-b border-sage-200">
               <h3 className="text-lg font-bold text-slate-muted">Enrolled Modules</h3>
@@ -349,12 +290,12 @@ export default async function StudentHomePage() {
                   You are not currently enrolled in any modules. Contact instructor.
                 </p>
               ) : (
-                enrollments.map((enrollment) => {
+                enrollments.map((enrollment: any) => {
                   const sub = enrollment.subject;
                   return (
                     <Link
                       key={sub.id}
-                      href={`/student/modules/${sub.id}`}
+                      href={`/student/modules?id=${sub.id}`}
                       className="block p-4 rounded-2xl bg-ivory-50 border border-sage-200/80 hover:bg-sage-100/50 transition-all group"
                     >
                       <div className="flex items-center justify-between">
@@ -362,7 +303,7 @@ export default async function StudentHomePage() {
                           {sub.level}
                         </span>
                         <span className="text-xs font-medium text-slate-light">
-                          {sub.materials.length} Drops • {sub.assignments.length} Quests
+                          {sub.materials?.length || 0} Drops • {sub.assignments?.length || 0} Quests
                         </span>
                       </div>
                       <h4 className="text-base font-bold text-slate-muted group-hover:text-slate-900 mt-2">
@@ -378,7 +319,6 @@ export default async function StudentHomePage() {
             </div>
           </div>
 
-          {/* Latest Study Drops */}
           <div className="bg-white rounded-3xl border border-sage-200 p-6 subtle-paper-shadow">
             <div className="flex items-center justify-between pb-4 border-b border-sage-200">
               <div className="flex items-center gap-2">
@@ -394,7 +334,7 @@ export default async function StudentHomePage() {
             </div>
 
             <div className="space-y-3 mt-4">
-              {recentMaterials.map((mat) => (
+              {recentMaterials.map((mat: any) => (
                 <div
                   key={mat.id}
                   className="p-3 rounded-xl border border-sage-200 flex items-center justify-between gap-3 text-xs"
@@ -402,7 +342,7 @@ export default async function StudentHomePage() {
                   <div className="overflow-hidden">
                     <p className="font-bold text-slate-muted truncate">{mat.title}</p>
                     <p className="text-[11px] text-slate-light truncate mt-0.5">
-                      {mat.subject.name} • {mat.fileType} ({mat.fileSize})
+                      {mat.subject?.name} • {mat.fileType} ({mat.fileSize})
                     </p>
                   </div>
                   <a

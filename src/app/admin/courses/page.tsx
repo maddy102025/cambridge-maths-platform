@@ -1,25 +1,27 @@
-import React from 'react';
-import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth';
-import prisma from '@/lib/prisma';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import CoursesManagementView from '@/components/admin/CoursesManagementView';
 
-export const dynamic = 'force-dynamic';
+export default function AdminCoursesPage() {
+  const [data, setData] = useState<any>(null);
 
-export default async function AdminCoursesPage() {
-  const user = await getCurrentUser();
-  if (!user || (user.role !== 'TEACHER' && user.role !== 'ADMIN')) {
-    redirect('/login');
+  useEffect(() => {
+    fetch('/api/portal?view=admin-courses')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((res) => {
+        if (res) setData(res);
+      })
+      .catch(console.error);
+  }, []);
+
+  if (!data) {
+    return (
+      <div className="py-12 text-center text-xs text-slate-light font-medium">
+        Loading courses and study drops...
+      </div>
+    );
   }
 
-  const subjects = await prisma.subject.findMany({
-    include: {
-      materials: {
-        orderBy: { createdAt: 'desc' },
-      },
-    },
-    orderBy: { orderIndex: 'asc' },
-  });
-
-  return <CoursesManagementView subjects={subjects} />;
+  return <CoursesManagementView subjects={data.subjects || []} />;
 }
