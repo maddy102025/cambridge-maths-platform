@@ -88,14 +88,27 @@ A separate auth layer (role `SuperAdmin`, cookie `cambridge_cms_token`, 24h JWT 
 |---|---|
 | `/cms/login` | SuperAdmin sign-in (no prefilled credentials) |
 | `/cms` | Overview: field counts, customised fields, recent edits |
+| `/cms/media` | **Cloudflare R2 Media Library**: Upload, search, preview, categorize, copy CDN URLs, and delete static/permanent media assets |
 | `/cms/public` · `/cms/student` · `/cms/teacher` · `/cms/global` | Section editors with search, per-field revert, per-section reset, sticky Publish bar |
 | `/cms/account` | Session info and security notes |
 
+- **Cloudflare R2 Media Management**:
+  - Bucket: `cambridge-maths-media` bound to `MEDIA_BUCKET` in `wrangler.toml`.
+  - Static and permanent media assets are served directly from the edge via `/media/:key` with HTTP metadata and caching headers.
+  - Dedicated CMS interface (`src/components/cms/MediaManager.tsx`, `/cms/media`) for SuperAdmin to upload branding assets, badges, banners, course thumbnails, and static documents.
+- **Google Drive Storage Integration**:
+  - Student uploads, quest assignment submissions, and teacher study drops support shareable Google Drive links alongside direct file attachments.
+  - Automatic URL parsing and metadata formatting (`src/lib/googleDrive.ts`, `src/components/common/GoogleDriveUpload.tsx`) with direct preview links and file type badges (Google Docs, Sheets, Slides, Folders, PDF, ZIP).
+  - Teacher grading view (`src/components/admin/AssignmentGradingView.tsx`) allows one-click opening of student Google Drive solutions.
+- **Teacher Student Creation**:
+  - Teachers and Admins can create new student accounts directly within `/admin/students`.
+  - Configures full name, email, auto-generated secure password, phone, Cambridge level, projected grade, target exam date, and course enrollments.
+- **Unified Portal Header & Design Tokens**:
+  - `src/components/layout/PortalHeader.tsx` provides consistent layout, responsive mobile drawer navigation, live academic dates, role badges, streak indicators, and quick portal switching across Student, Teacher, and CMS portals.
 - Layout: persistent sidebar on desktop, drawer on mobile (`src/components/cms/CmsShell.tsx`, `CmsSidebar.tsx`).
 - Pages read copy with the `cms(key, fallback)` hook (`src/lib/useCms.ts`); defaults live in `src/lib/cmsData.ts`.
-- API: `GET/POST /api/cms/content`, `POST /api/cms/reset`, `POST /api/cms/login|logout`, `GET /api/cms/session` (mirrored in `cloudflare/worker.ts`). Writes accept only known keys, max 5000 chars.
+- API: `GET/POST /api/cms/content`, `POST /api/cms/reset`, `POST /api/cms/login|logout`, `GET /api/cms/session`, `GET/POST/DELETE /api/cms/media` (mirrored in `cloudflare/worker.ts`). Writes accept only known keys, max 5000 chars.
 - SuperAdmin can also open the teacher workspace (`/admin`) and its APIs.
-- Not yet CMS-managed: login/register/forgot-password headings, student header/sidebar and admin sidebar labels.
 
 ## 3. Demo Credentials
 

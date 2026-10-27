@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Globe, GraduationCap, Presentation, Settings2, Loader2 } from 'lucide-react';
+import { ArrowRight, Globe, GraduationCap, Presentation, Settings2, Loader2, HardDrive } from 'lucide-react';
 import { CMS_CATEGORIES, CmsCategory } from '@/lib/cmsMeta';
 import { DEFAULT_CMS_MAP } from '@/lib/cmsData';
 import { useCmsSession } from '@/components/cms/CmsSessionContext';
@@ -71,7 +71,21 @@ export default function CmsOverviewPage() {
         </div>
       ) : (
         <>
-          <div className="mt-8 grid gap-5 sm:grid-cols-2">
+          <div className="mt-8 mb-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-600/5 to-transparent border border-amber-400/20 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-amber-400/15 text-amber-300 flex items-center justify-center shrink-0">
+                <HardDrive className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-white">Cloudflare R2 Media Management</h3>
+                <p className="text-xs text-slate-400">Store, organize, and copy CDN URLs for platform images, syllabus documents, and permanent assets.</p>
+              </div>
+            </div>
+            <Link href="/cms/media" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 text-xs font-semibold shrink-0 transition">
+              Open Media Library <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+          <div className="mt-4 grid gap-5 sm:grid-cols-2">
             {stats.map(({ meta, total, custom }) => {
               const Icon = ICONS[meta.id];
               return (

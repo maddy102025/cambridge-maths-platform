@@ -3,6 +3,7 @@ import { getCurrentUser } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import fs from 'fs';
 import path from 'path';
+import { parseGoogleDriveUrl } from '@/lib/googleDrive';
 
 export async function POST(request: Request) {
   try {
@@ -20,23 +21,42 @@ export async function POST(request: Request) {
       const topic = formData.get('topic') as string;
       const description = formData.get('description') as string;
       const file = formData.get('file') as File | null;
+      const driveUrl = (formData.get('driveUrl') as string) || '';
 
-      if (!subjectId || !title || !topic || !file) {
-        return NextResponse.json({ error: 'Subject, title, topic, and file required.' }, { status: 400 });
+      if (!subjectId || !title || !topic) {
+        return NextResponse.json({ error: 'Subject, title, and topic are required.' }, { status: 400 });
       }
 
-      const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-      if (!fs.existsSync(uploadsDir)) {
-        fs.mkdirSync(uploadsDir, { recursive: true });
+      let fileUrl = '';
+      let fileType = 'PDF';
+      let fileSize = 'Cloud';
+
+      if (driveUrl) {
+        const parsedDrive = parseGoogleDriveUrl(driveUrl);
+        if (!parsedDrive.isGoogleDrive) {
+          return NextResponse.json({ error: 'Invalid Google Drive link provided.' }, { status: 400 });
+        }
+        fileUrl = parsedDrive.viewUrl;
+        fileType = parsedDrive.kind === 'document' ? 'DOCS' : parsedDrive.kind === 'spreadsheet' ? 'SHEETS' : parsedDrive.kind === 'presentation' ? 'SLIDES' : 'G-DRIVE';
+        fileSize = 'Google Drive';
+      } else if (file) {
+        const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+        if (!fs.existsSync(uploadsDir)) {
+          fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+
+        const safeName = `drop_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+        const filePath = path.join(uploadsDir, safeName);
+        const bytes = await file.arrayBuffer();
+        fs.writeFileSync(filePath, Buffer.from(bytes));
+
+        const ext = path.extname(file.name).replace('.', '').toUpperCase();
+        fileSize = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+        fileType = ext;
+        fileUrl = `/uploads/${safeName}`;
+      } else {
+        return NextResponse.json({ error: 'Please provide a Google Drive link or select a file to upload.' }, { status: 400 });
       }
-
-      const safeName = `drop_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-      const filePath = path.join(uploadsDir, safeName);
-      const bytes = await file.arrayBuffer();
-      fs.writeFileSync(filePath, Buffer.from(bytes));
-
-      const ext = path.extname(file.name).replace('.', '').toUpperCase();
-      const fileSize = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
 
       const material = await prisma.studyMaterial.create({
         data: {
@@ -44,9 +64,9 @@ export async function POST(request: Request) {
           title: title.trim(),
           topic: topic.trim(),
           description: description?.trim() || null,
-          fileType: ext,
+          fileType,
           fileSize,
-          fileUrl: `/uploads/${safeName}`,
+          fileUrl,
           uploadedByRole: 'TEACHER',
           uploadedById: user.id,
           isPublicToClass: true,
@@ -63,19 +83,25 @@ export async function POST(request: Request) {
           data: {
             userId: enr.studentId,
             title: 'New Study Drop Published',
-            message: `Ms. Eleanor Vance added "${material.title}" (${material.topic}).`,
-            linkUrl: `/student/modules/${subjectId}`,
+            message: `Ms. Vance uploaded a new ${fileType} resource: "${title}" under ${topic}.`,
+            linkUrl: '/student/modules',
             type: 'RESOURCE',
           },
         });
       }
 
-      return NextResponse.json({ success: true, message: 'Resource uploaded and published to Study Drops!' });
+      return NextResponse.json({
+        success: true,
+        message: driveUrl
+          ? 'Google Drive resource linked and published to Study Drops!'
+          : 'Resource uploaded and published to Study Drops!',
+        material,
+      });
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (error: any) {
-    console.error('Course management error:', error);
-    return NextResponse.json({ error: 'Server error processing request.' }, { status: 500 });
+    console.error('Course management action error:', error);
+    return NextResponse.json({ error: 'Failed to process course action.' }, { status: 500 });
   }
 }

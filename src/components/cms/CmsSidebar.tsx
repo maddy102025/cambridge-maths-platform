@@ -10,6 +10,7 @@ import {
   GraduationCap,
   Presentation,
   Settings2,
+  HardDrive,
   UserCog,
   ExternalLink,
   LogOut,
@@ -65,6 +66,9 @@ export default function CmsSidebar({ onNavigate }: { onNavigate?: () => void }) 
 
         <div className="space-y-1">
           <p className="px-3 pb-1 text-[10px] uppercase tracking-[0.18em] text-slate-500">Content</p>
+          <Link href="/cms/media" onClick={onNavigate} className={linkCls(isActive('/cms/media'))}>
+            <HardDrive className="w-4 h-4" /> Media Library (R2)
+          </Link>
           {CMS_CATEGORIES.map((c) => {
             const Icon = ICONS[c.id];
             return (

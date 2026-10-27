@@ -1,5 +1,7 @@
 'use client';
 
+import { parseGoogleDriveUrl } from '@/lib/googleDrive';
+
 import React, { useState } from 'react';
 import {
   CheckSquare,
@@ -14,7 +16,8 @@ import {
   FileText,
   User,
   Calendar,
-  Sparkles
+  Sparkles,
+  ExternalLink
 } from 'lucide-react';
 
 interface AssignmentGradingViewProps {
@@ -291,14 +294,32 @@ export default function AssignmentGradingView({
                           )}
                         </div>
 
-                        <a
-                          href={ver.fileUrl}
-                          download
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sage-300 hover:bg-sage-400 text-slate-900 font-semibold text-xs transition-colors shrink-0"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          <span>Inspect File</span>
-                        </a>
+                        {(() => {
+                          const d = parseGoogleDriveUrl(ver.fileUrl);
+                          if (d.isGoogleDrive) {
+                            return (
+                              <a
+                                href={d.viewUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-300 font-semibold text-xs transition-colors shrink-0"
+                              >
+                                <span>Open Google Drive</span>
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            );
+                          }
+                          return (
+                            <a
+                              href={ver.fileUrl}
+                              download
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sage-300 hover:bg-sage-400 text-slate-900 font-semibold text-xs transition-colors shrink-0"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>Inspect File</span>
+                            </a>
+                          );
+                        })()}
                       </div>
                     ))}
                   </div>

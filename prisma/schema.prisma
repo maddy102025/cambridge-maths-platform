@@ -220,3 +220,18 @@ model CmsContent {
   updatedBy   String?  @default("CMS Administrator")
 }
 
+
+model MediaItem {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  url         String
+  fileName    String
+  mimeType    String
+  sizeBytes   Int
+  category    String   @default("GENERAL") // HERO, LOGO, BANNER, DOCUMENT, GENERAL
+  title       String?
+  description String?
+  uploadedBy  String   @default("SuperAdmin")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

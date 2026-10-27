@@ -5,6 +5,7 @@ import { INITIAL_CMS_DATA } from '../src/lib/cmsData';
 export interface Env {
   DB: any; // D1Database
   ASSETS: { fetch: (req: Request | string) => Promise<Response> };
+  MEDIA_BUCKET?: any; // Cloudflare R2
   JWT_SECRET?: string;
   CMS_MASTER_PASSKEY?: string; // optional secret; enables the emergency CMS passkey when set
 }
@@ -181,6 +182,26 @@ export default {
         console.error('Error reading FileStorage:', e);
       }
       // Fallback to static asset in /public/uploads/
+      return env.ASSETS.fetch(request);
+    }
+
+    // 1b. Serve media assets from Cloudflare R2 if requested under /media/
+    if (request.method === 'GET' && pathname.startsWith('/media/')) {
+      const mediaKey = decodeURIComponent(pathname.replace('/media/', ''));
+      if (env.MEDIA_BUCKET) {
+        try {
+          const object = await env.MEDIA_BUCKET.get(mediaKey);
+          if (object) {
+            const headers = new Headers();
+            object.writeHttpMetadata(headers);
+            headers.set('etag', object.httpEtag);
+            headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+            return new Response(object.body, { headers });
+          }
+        } catch (e) {
+          console.error('Error fetching from R2:', e);
+        }
+      }
       return env.ASSETS.fetch(request);
     }
 
@@ -400,6 +421,108 @@ export default {
             message: `Reset ${targets.length} content fields to the standard defaults.`,
             resetCount: targets.length,
           });
+        }
+
+        // --- GET /api/cms/media ---
+        if (pathname === '/api/cms/media' && request.method === 'GET') {
+          const cmsSession = await getCurrentCmsUserFromD1(request, env);
+          if (!cmsSession) return jsonResponse({ error: 'Unauthorized CMS session' }, 401);
+
+          const { results: items } = await env.DB.prepare(
+            'SELECT * FROM MediaItem ORDER BY createdAt DESC'
+          ).all().catch(() => ({ results: [] }));
+
+          return jsonResponse({
+            success: true,
+            items: items || [],
+            count: (items || []).length,
+            storageBackend: 'Cloudflare R2 (cambridge-maths-media)',
+          });
+        }
+
+        // --- POST /api/cms/media ---
+        if (pathname === '/api/cms/media' && request.method === 'POST') {
+          const cmsSession = await getCurrentCmsUserFromD1(request, env);
+          if (!cmsSession) return jsonResponse({ error: 'Unauthorized CMS session' }, 401);
+
+          const formData = await request.formData();
+          const file = formData.get('file') as File | null;
+          const category = (formData.get('category') as string) || 'GENERAL';
+          const title = (formData.get('title') as string) || '';
+          const description = (formData.get('description') as string) || '';
+
+          if (!file) return jsonResponse({ error: 'No media file provided.' }, 400);
+
+          const cleanBase = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+          const safeKey = `media_${Date.now()}_${cleanBase}`;
+          const bytes = await file.arrayBuffer();
+
+          if (env.MEDIA_BUCKET) {
+            await env.MEDIA_BUCKET.put(safeKey, bytes, {
+              httpMetadata: {
+                contentType: file.type || 'application/octet-stream',
+              },
+            });
+          }
+
+          const mediaUrl = `/media/${safeKey}`;
+          const id = uid('med');
+          const now = new Date().toISOString();
+
+          await env.DB.prepare(
+            'INSERT INTO MediaItem (id, key, url, fileName, mimeType, sizeBytes, category, title, description, uploadedBy, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+          )
+            .bind(
+              id,
+              safeKey,
+              mediaUrl,
+              file.name,
+              file.type || 'application/octet-stream',
+              file.size,
+              category.toUpperCase(),
+              title.trim() || file.name,
+              description.trim() || null,
+              cmsSession.fullName || 'SuperAdmin',
+              now,
+              now
+            )
+            .run();
+
+          return jsonResponse({
+            success: true,
+            message: 'Media successfully uploaded to R2 media storage.',
+            media: {
+              id,
+              key: safeKey,
+              url: mediaUrl,
+              fileName: file.name,
+              mimeType: file.type || 'application/octet-stream',
+              sizeBytes: file.size,
+              category: category.toUpperCase(),
+              title: title.trim() || file.name,
+            },
+          });
+        }
+
+        // --- DELETE /api/cms/media ---
+        if (pathname === '/api/cms/media' && request.method === 'DELETE') {
+          const cmsSession = await getCurrentCmsUserFromD1(request, env);
+          if (!cmsSession) return jsonResponse({ error: 'Unauthorized CMS session' }, 401);
+
+          const { id, key } = (await request.json().catch(() => ({}))) as any;
+          if (!id && !key) return jsonResponse({ error: 'Media ID or Key required.' }, 400);
+
+          if (key && env.MEDIA_BUCKET) {
+            await env.MEDIA_BUCKET.delete(key).catch(() => {});
+          }
+
+          await env.DB.prepare(
+            'DELETE FROM MediaItem WHERE id = ? OR key = ?'
+          )
+            .bind(id || '', key || '')
+            .run();
+
+          return jsonResponse({ success: true, message: 'Media asset deleted successfully.' });
         }
 
         // --- GET /api/portal ---
@@ -1102,23 +1225,34 @@ export default {
 
           const formData = await request.formData();
           const file = formData.get('file') as File | null;
+          const driveUrl = (formData.get('driveUrl') as string) || '';
           const subjectId = formData.get('subjectId') as string;
           const title = formData.get('title') as string;
           const topic = (formData.get('topic') as string) || 'General Work';
           const description = (formData.get('description') as string) || '';
 
-          if (!file || !subjectId || !title) {
-            return jsonResponse({ error: 'File, subject, and title are required.' }, 400);
-          }
-          if (file.size > MAX_FILE_SIZE) {
-            return jsonResponse({ error: 'File size exceeds the 15 MB limit.' }, 400);
-          }
-          const ext = getExt(file.name);
-          if (!ALLOWED_EXTENSIONS.includes(ext)) {
-            return jsonResponse({ error: `File format ${ext} is not supported.` }, 400);
+          if ((!file && !driveUrl) || !subjectId || !title) {
+            return jsonResponse({ error: 'File or Google Drive link, subject, and title are required.' }, 400);
           }
 
-          const saved = await saveFileToD1(env, file, 'mat');
+          let fileType = 'GDRIVE';
+          let fileSize = 'Drive Link';
+          let fileUrl = driveUrl.trim();
+
+          if (file && file.size > 0) {
+            if (file.size > MAX_FILE_SIZE) {
+              return jsonResponse({ error: 'File size exceeds the 15 MB limit.' }, 400);
+            }
+            const ext = getExt(file.name);
+            if (!ALLOWED_EXTENSIONS.includes(ext)) {
+              return jsonResponse({ error: `File format ${ext} is not supported.` }, 400);
+            }
+            const saved = await saveFileToD1(env, file, 'mat');
+            fileType = saved.ext;
+            fileSize = saved.fileSize;
+            fileUrl = saved.fileUrl;
+          }
+
           const id = uid('mat');
           const now = new Date().toISOString();
           const isTeacher = ['TEACHER', 'ADMIN', 'SuperAdmin'].includes(user.role as string);
@@ -1132,9 +1266,9 @@ export default {
               title.trim(),
               topic.trim(),
               description.trim() || null,
-              saved.ext,
-              saved.fileSize,
-              saved.fileUrl,
+              fileType,
+              fileSize,
+              fileUrl,
               isTeacher ? 'TEACHER' : 'STUDENT',
               user.id,
               isTeacher ? 1 : 0,
@@ -1146,7 +1280,7 @@ export default {
           return jsonResponse(
             {
               success: true,
-              message: 'File successfully uploaded and stored.',
+              message: driveUrl ? 'Google Drive resource link attached successfully.' : 'File successfully uploaded and stored.',
             },
             201
           );
@@ -1160,10 +1294,11 @@ export default {
           const formData = await request.formData();
           const assignmentId = formData.get('assignmentId') as string;
           const file = formData.get('file') as File | null;
+          const driveUrl = (formData.get('driveUrl') as string) || '';
           const studentNote = (formData.get('studentNote') as string) || '';
 
-          if (!assignmentId || !file) {
-            return jsonResponse({ error: 'Assignment ID and file are required.' }, 400);
+          if (!assignmentId || (!file && !driveUrl)) {
+            return jsonResponse({ error: 'Assignment ID and file or Google Drive URL are required.' }, 400);
           }
 
           const assignment = await env.DB.prepare('SELECT * FROM Assignment WHERE id = ?')
@@ -1175,15 +1310,27 @@ export default {
           if (isLate && !assignment.allowLateSubmissions) {
             return jsonResponse({ error: 'Late submissions are not accepted for this assignment.' }, 400);
           }
-          if (file.size > MAX_FILE_SIZE) {
-            return jsonResponse({ error: 'File size exceeds 15 MB limit.' }, 400);
-          }
-          const ext = getExt(file.name);
-          if (!ALLOWED_EXTENSIONS.includes(ext)) {
-            return jsonResponse({ error: `Format ${ext} not allowed.` }, 400);
+
+          let savedUrl = driveUrl.trim();
+          let savedName = 'Google Drive Document';
+          let savedSize = 'Drive Link';
+          let savedExt = 'GDRIVE';
+
+          if (file && file.size > 0) {
+            if (file.size > MAX_FILE_SIZE) {
+              return jsonResponse({ error: 'File size exceeds 15 MB limit.' }, 400);
+            }
+            const ext = getExt(file.name);
+            if (!ALLOWED_EXTENSIONS.includes(ext)) {
+              return jsonResponse({ error: `Format ${ext} not allowed.` }, 400);
+            }
+            const saved = await saveFileToD1(env, file, `quest_${assignmentId}`);
+            savedUrl = saved.fileUrl;
+            savedName = file.name;
+            savedSize = saved.fileSize;
+            savedExt = saved.ext;
           }
 
-          const saved = await saveFileToD1(env, file, `quest_${assignmentId}`);
           const now = new Date().toISOString();
 
           const existing = await env.DB.prepare(
@@ -1220,10 +1367,10 @@ export default {
               uid('ver'),
               submissionId,
               nextVersion,
-              saved.fileUrl,
-              file.name,
-              saved.fileSize,
-              saved.ext,
+              savedUrl,
+              savedName,
+              savedSize,
+              savedExt,
               studentNote.trim() || null,
               now
             )
@@ -1270,7 +1417,54 @@ export default {
 
           // POST /api/admin/students
           if (pathname === '/api/admin/students' && request.method === 'POST') {
-            const { action, studentId, subjectId, projectedGrade } = (await request.json()) as any;
+            const body = (await request.json().catch(() => ({}))) as any;
+            const { action, studentId, subjectId, projectedGrade, fullName, email, password, phone, level, subjectIds } = body;
+
+            if (action === 'CREATE_STUDENT') {
+              if (!fullName || !email || !password) {
+                return jsonResponse({ error: 'Full name, email, and password are required.' }, 400);
+              }
+              const cleanEmail = String(email).trim().toLowerCase();
+              const existing = await env.DB.prepare('SELECT id FROM User WHERE email = ?').bind(cleanEmail).first();
+              if (existing) {
+                return jsonResponse({ error: 'An account with this email address already exists.' }, 409);
+              }
+              const passwordHash = await bcrypt.hash(password, 10);
+              const newStudentId = uid('usr');
+              const bio = level ? `Enrolled in ${level} mathematics mentorship.` : 'Enrolled student.';
+              const pGrade = projectedGrade || 'Predicted A*';
+
+              await env.DB.prepare(
+                'INSERT INTO User (id, email, passwordHash, fullName, role, phone, projectedGrade, emailVerified, phoneVerified, bio, studyStreakDays, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, ?, 0, ?, ?)'
+              )
+                .bind(newStudentId, cleanEmail, passwordHash, fullName.trim(), 'STUDENT', phone ? phone.trim() : null, pGrade, bio, now, now)
+                .run();
+
+              if (Array.isArray(subjectIds) && subjectIds.length > 0) {
+                for (const subId of subjectIds) {
+                  if (!subId) continue;
+                  const subExists = await env.DB.prepare('SELECT id FROM Subject WHERE id = ?').bind(subId).first();
+                  if (subExists) {
+                    await env.DB.prepare(
+                      'INSERT OR IGNORE INTO StudentEnrollment (id, studentId, subjectId, status, enrolledAt) VALUES (?, ?, ?, ?, ?)'
+                    )
+                      .bind(uid('enr'), newStudentId, subId, 'ACTIVE', now)
+                      .run();
+                  }
+                }
+              }
+
+              return jsonResponse({
+                success: true,
+                message: `Student account created for "${fullName.trim()}". Enrolled in ${subjectIds ? subjectIds.length : 0} course(s).`,
+                student: {
+                  id: newStudentId,
+                  fullName: fullName.trim(),
+                  email: cleanEmail,
+                  role: 'STUDENT',
+                },
+              });
+            }
             if (action === 'ENROLL') {
               await env.DB.prepare(
                 'INSERT OR REPLACE INTO StudentEnrollment (id, studentId, subjectId, status, enrolledAt) VALUES (?, ?, ?, ?, ?)'
@@ -1307,6 +1501,7 @@ export default {
             const allowLateSubmissions = formData.get('allowLateSubmissions') === 'true' ? 1 : 0;
             const allowResubmissions = formData.get('allowResubmissions') === 'true' ? 1 : 0;
             const file = formData.get('referenceFile') as File | null;
+            const driveUrl = (formData.get('driveUrl') as string) || '';
 
             if (!subjectId || !title || !instructions || !dueDate) {
               return jsonResponse({ error: 'Subject, title, instructions, and due date are required.' }, 400);
@@ -1318,6 +1513,9 @@ export default {
               const saved = await saveFileToD1(env, file, 'prompt');
               referenceFileUrl = saved.fileUrl;
               referenceFileName = file.name;
+            } else if (driveUrl) {
+              referenceFileUrl = driveUrl.trim();
+              referenceFileName = 'Google Drive Reference Material';
             }
 
             const asgId = uid('asg');
@@ -1487,11 +1685,23 @@ export default {
               const topic = formData.get('topic') as string;
               const description = formData.get('description') as string;
               const file = formData.get('file') as File | null;
+              const driveUrl = (formData.get('driveUrl') as string) || '';
 
-              if (!subjectId || !title || !topic || !file) {
-                return jsonResponse({ error: 'Subject, title, topic, and file required.' }, 400);
+              if (!subjectId || !title || !topic || (!file && !driveUrl)) {
+                return jsonResponse({ error: 'Subject, title, topic, and file or Google Drive URL required.' }, 400);
               }
-              const saved = await saveFileToD1(env, file, 'drop');
+
+              let savedUrl = driveUrl.trim();
+              let savedSize = 'Drive Link';
+              let savedExt = 'GDRIVE';
+
+              if (file && file.size > 0) {
+                const saved = await saveFileToD1(env, file, 'drop');
+                savedUrl = saved.fileUrl;
+                savedSize = saved.fileSize;
+                savedExt = saved.ext;
+              }
+
               await env.DB.prepare(
                 'INSERT INTO StudyMaterial (id, subjectId, title, topic, description, fileType, fileSize, fileUrl, uploadedByRole, uploadedById, isPublicToClass, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)'
               )
@@ -1501,9 +1711,9 @@ export default {
                   title.trim(),
                   topic.trim(),
                   description?.trim() || null,
-                  saved.ext,
-                  saved.fileSize,
-                  saved.fileUrl,
+                  savedExt,
+                  savedSize,
+                  savedUrl,
                   'TEACHER',
                   user.id,
                   now,
@@ -1535,7 +1745,7 @@ export default {
 
               return jsonResponse({
                 success: true,
-                message: 'Resource uploaded and published to Study Drops!',
+                message: driveUrl ? 'Resource attached via Google Drive and published!' : 'Resource uploaded and published to Study Drops!',
               });
             }
             return jsonResponse({ error: 'Invalid action' }, 400);

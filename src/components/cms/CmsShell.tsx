@@ -2,9 +2,10 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, Loader2, ShieldCheck } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import CmsSidebar from './CmsSidebar';
 import { CmsSessionContext, CmsSessionUser } from './CmsSessionContext';
+import PortalHeader from '../layout/PortalHeader';
 
 export default function CmsShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || '';
@@ -86,19 +87,13 @@ export default function CmsShell({ children }: { children: React.ReactNode }) {
         )}
 
         <div className="flex-1 min-w-0 flex flex-col">
-          <header className="lg:hidden sticky top-0 z-40 flex items-center justify-between px-4 h-14 bg-[#121920]/95 backdrop-blur border-b border-white/5">
-            <div className="flex items-center gap-2 text-amber-400 font-semibold text-sm">
-              <ShieldCheck className="w-5 h-5" /> SuperAdmin Console
-            </div>
-            <button
-              id="cms-mobile-menu"
-              aria-label="Open navigation"
-              onClick={() => setDrawerOpen(true)}
-              className="p-2 rounded-lg hover:bg-white/5 text-slate-300"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-          </header>
+          <PortalHeader
+            role="SuperAdmin"
+            user={user}
+            portalTitle="SuperAdmin Content Console"
+            portalSubtitle="Cloudflare R2 Storage & D1 High-Availability Database Control"
+            onMenuClick={() => setDrawerOpen(true)}
+          />
           <main className="flex-1 p-4 sm:p-6 lg:p-10 max-w-6xl w-full mx-auto">{children}</main>
         </div>
       </div>

@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import GoogleDriveUpload, { GoogleDriveUploadResult } from '@/components/common/GoogleDriveUpload';
+import { parseGoogleDriveUrl } from '@/lib/googleDrive';
 import {
   BookOpen,
   FileText,
@@ -17,7 +19,8 @@ import {
   X,
   FileUp,
   FolderOpen,
-  Filter
+  Filter,
+  ExternalLink
 } from 'lucide-react';
 
 interface SubjectDetailViewProps {
@@ -36,6 +39,7 @@ export default function SubjectDetailView({ subject, userRole }: SubjectDetailVi
   const [uploadTopic, setUploadTopic] = useState('');
   const [uploadDesc, setUploadDesc] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [driveResult, setDriveResult] = useState<GoogleDriveUploadResult | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [uploadError, setUploadError] = useState('');
@@ -445,14 +449,32 @@ export default function SubjectDetailView({ subject, userRole }: SubjectDetailVi
                     <span className="text-[10px] text-slate-light">
                       Added {new Date(mat.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                     </span>
-                    <a
-                      href={mat.fileUrl}
-                      download
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sage-300 hover:bg-sage-400 text-slate-900 font-semibold text-xs shadow-xs transition-colors"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Download</span>
-                    </a>
+                    {(() => {
+                      const dInfo = parseGoogleDriveUrl(mat.fileUrl);
+                      if (dInfo.isGoogleDrive) {
+                        return (
+                          <a
+                            href={dInfo.viewUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-300 font-semibold text-xs transition-colors"
+                          >
+                            <span>Open Drive</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        );
+                      }
+                      return (
+                        <a
+                          href={mat.fileUrl}
+                          download
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sage-300 hover:bg-sage-400 text-slate-900 font-semibold text-xs shadow-xs transition-colors"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Download</span>
+                        </a>
+                      );
+                    })()}
                   </div>
                 </div>
               ))}
@@ -544,33 +566,15 @@ export default function SubjectDetailView({ subject, userRole }: SubjectDetailVi
                 />
               </div>
 
-              {/* File Drop Area */}
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-muted mb-1.5">
-                  Select Document *
-                </label>
-                <label className="border-2 border-dashed border-sage-300 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-ivory-100/60 transition-colors">
-                  <FileUp className="w-8 h-8 text-sage-600 mb-2" />
-                  <span className="text-xs font-bold text-slate-muted">
-                    {selectedFile ? selectedFile.name : 'Click or drag file here'}
-                  </span>
-                  <span className="text-[11px] text-slate-light mt-0.5">
-                    {selectedFile
-                      ? `${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB`
-                      : 'PDF, DOCX, ZIP, PNG, JPG up to 15 MB'}
-                  </span>
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept=".pdf,.docx,.doc,.zip,.jpg,.jpeg,.png"
-                    onChange={handleFileChange}
-                  />
-                </label>
-              </div>
+              <GoogleDriveUpload
+                onSelected={setDriveResult}
+                label="Document / Submission Attachment *"
+                hint="Share via Google Drive link (Docs, Sheets, Slides, Drive PDF) or direct file upload."
+              />
 
               <button
                 type="submit"
-                disabled={uploading || !selectedFile}
+                disabled={uploading || !driveResult}
                 className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-sage-300 hover:bg-sage-400 text-slate-900 font-semibold text-sm disabled:opacity-60 transition-colors shadow-xs"
               >
                 {uploading ? <span>Uploading & Validating...</span> : <span>Upload File</span>}

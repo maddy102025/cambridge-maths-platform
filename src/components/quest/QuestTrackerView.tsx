@@ -1,5 +1,8 @@
 'use client';
 
+import GoogleDriveUpload, { GoogleDriveUploadResult } from '@/components/common/GoogleDriveUpload';
+import { parseGoogleDriveUrl } from '@/lib/googleDrive';
+
 import React, { useState } from 'react';
 import {
   CheckSquare,
@@ -15,7 +18,8 @@ import {
   MessageSquare,
   Award,
   ChevronRight,
-  Filter
+  Filter,
+  ExternalLink
 } from 'lucide-react';
 
 interface QuestTrackerViewProps {
@@ -37,6 +41,7 @@ export default function QuestTrackerView({
 
   // Submission Form State
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [driveResult, setDriveResult] = useState<GoogleDriveUploadResult | null>(null);
   const [studentNote, setStudentNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -129,8 +134,8 @@ export default function QuestTrackerView({
 
   const handleSubmitWork = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!uploadFile) {
-      setSubmitError('Please attach your solution document.');
+    if (!driveResult) {
+      setSubmitError('Please provide a Google Drive link or select a file to upload.');
       return;
     }
 
@@ -141,7 +146,11 @@ export default function QuestTrackerView({
     try {
       const formData = new FormData();
       formData.append('assignmentId', selectedAssignment.id);
-      formData.append('file', uploadFile);
+      if (driveResult.isGoogleDrive) {
+        formData.append('driveUrl', driveResult.fileUrl);
+      } else if (driveResult.rawFile) {
+        formData.append('file', driveResult.rawFile);
+      }
       formData.append('studentNote', studentNote);
 
       const res = await fetch('/api/student/quest/submit', {
@@ -443,13 +452,31 @@ export default function QuestTrackerView({
                           )}
                         </div>
 
-                        <a
-                          href={ver.fileUrl}
-                          download
-                          className="text-xs font-bold text-slate-muted hover:underline shrink-0"
-                        >
-                          Download
-                        </a>
+                        {(() => {
+                          const d = parseGoogleDriveUrl(ver.fileUrl);
+                          if (d.isGoogleDrive) {
+                            return (
+                              <a
+                                href={d.viewUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 text-xs font-bold text-blue-700 hover:text-blue-900 shrink-0"
+                              >
+                                <span>Open in Drive</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            );
+                          }
+                          return (
+                            <a
+                              href={ver.fileUrl}
+                              download
+                              className="text-xs font-bold text-slate-muted hover:underline shrink-0"
+                            >
+                              Download
+                            </a>
+                          );
+                        })()}
                       </div>
                     ))}
                   </div>
@@ -478,25 +505,11 @@ export default function QuestTrackerView({
                   )}
 
                   <form onSubmit={handleSubmitWork} className="space-y-4">
-                    <div>
-                      <label className="border-2 border-dashed border-sage-300 rounded-2xl p-5 flex flex-col items-center justify-center cursor-pointer hover:bg-ivory-100/60 transition-colors">
-                        <Upload className="w-7 h-7 text-sage-600 mb-1.5" />
-                        <span className="text-xs font-bold text-slate-muted">
-                          {uploadFile ? uploadFile.name : 'Select or drop your PDF solution scan'}
-                        </span>
-                        <span className="text-[11px] text-slate-light mt-0.5">
-                          {uploadFile
-                            ? `${(uploadFile.size / (1024 * 1024)).toFixed(2)} MB`
-                            : 'PDF, DOCX, ZIP, PNG, JPG up to 15 MB'}
-                        </span>
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept=".pdf,.docx,.doc,.zip,.jpg,.jpeg,.png"
-                          onChange={handleFileChange}
-                        />
-                      </label>
-                    </div>
+                    <GoogleDriveUpload
+                      onSelected={setDriveResult}
+                      label="Solution Document Attachment *"
+                      hint="Paste a Google Drive/Docs shareable link or upload your scanned solution PDF/Images."
+                    />
 
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-muted mb-1">
@@ -514,7 +527,7 @@ export default function QuestTrackerView({
 
                     <button
                       type="submit"
-                      disabled={submitting || !uploadFile}
+                      disabled={submitting || !driveResult}
                       className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-sage-300 hover:bg-sage-400 text-slate-900 font-semibold text-xs disabled:opacity-60 transition-all shadow-xs"
                     >
                       {submitting ? (

@@ -3,15 +3,17 @@
 import React, { useState } from 'react';
 import {
   BookOpen,
-  FolderPlus,
   Upload,
-  FileText,
+  Download,
   CheckCircle2,
   AlertCircle,
+  FileText,
   Clock,
-  Download,
-  Filter
+  Sparkles,
+  ExternalLink
 } from 'lucide-react';
+import GoogleDriveUpload, { GoogleDriveUploadResult } from '@/components/common/GoogleDriveUpload';
+import { parseGoogleDriveUrl } from '@/lib/googleDrive';
 
 interface CoursesManagementViewProps {
   subjects: any[];
@@ -22,17 +24,17 @@ export default function CoursesManagementView({ subjects }: CoursesManagementVie
   const [title, setTitle] = useState('');
   const [topic, setTopic] = useState('');
   const [description, setDescription] = useState('');
-  const [file, setFile] = useState<File | null>(null);
+  const [driveResult, setDriveResult] = useState<GoogleDriveUploadResult | null>(null);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  const currentSubject = subjects.find((s) => s.id === selectedSubjectId) || subjects[0];
+  const currentSubject = subjects.find((s) => s.id === selectedSubjectId);
 
-  const handleUploadSubmit = async (e: React.FormEvent) => {
+  const handleUploadResource = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) {
-      setError('Please select a resource file.');
+    if (!selectedSubjectId || !title || !topic || !driveResult) {
+      setError('Please fill in all required fields and provide a file or Google Drive document.');
       return;
     }
 
@@ -47,7 +49,12 @@ export default function CoursesManagementView({ subjects }: CoursesManagementVie
       formData.append('title', title);
       formData.append('topic', topic);
       formData.append('description', description);
-      formData.append('file', file);
+
+      if (driveResult.isGoogleDrive) {
+        formData.append('driveUrl', driveResult.fileUrl);
+      } else if (driveResult.rawFile) {
+        formData.append('file', driveResult.rawFile);
+      }
 
       const res = await fetch('/api/admin/courses', {
         method: 'POST',
@@ -61,7 +68,7 @@ export default function CoursesManagementView({ subjects }: CoursesManagementVie
       setTitle('');
       setTopic('');
       setDescription('');
-      setFile(null);
+      setDriveResult(null);
       setTimeout(() => {
         window.location.reload();
       }, 1500);
@@ -76,10 +83,10 @@ export default function CoursesManagementView({ subjects }: CoursesManagementVie
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-muted tracking-tight">
-          Courses & Study Drops Repository
+          Courses &amp; Study Drops Repository
         </h1>
         <p className="text-sm text-slate-soft mt-1">
-          Upload new revision notes, formula sheets, and past paper packs into student Study Drops.
+          Publish revision notes, formula sheets, past paper collections, and Google Drive worksheets into student Study Drops.
         </p>
       </div>
 
@@ -98,22 +105,27 @@ export default function CoursesManagementView({ subjects }: CoursesManagementVie
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column (5 cols): Upload New Resource Form */}
-        <div className="lg:col-span-5 bg-white rounded-3xl border border-sage-200 p-6 sm:p-7 subtle-paper-shadow space-y-4">
-          <div className="flex items-center gap-2 pb-3 border-b border-sage-200">
-            <FolderPlus className="w-5 h-5 text-slate-muted" />
-            <h3 className="font-bold text-slate-muted text-base">Publish New Study Drop</h3>
+        {/* Left Column (5 cols): Upload Form */}
+        <div className="lg:col-span-5 bg-white rounded-3xl border border-sage-200 p-6 sm:p-7 subtle-paper-shadow space-y-5">
+          <div className="flex items-center gap-2.5 pb-4 border-b border-sage-200">
+            <div className="w-9 h-9 rounded-xl bg-sage-100 text-slate-muted flex items-center justify-center font-bold">
+              <Upload className="w-4 h-4 text-sage-700" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-slate-muted">Add New Study Drop</h2>
+              <p className="text-[11px] text-slate-light">Supports Google Drive links &amp; Direct uploads</p>
+            </div>
           </div>
 
-          <form onSubmit={handleUploadSubmit} className="space-y-4">
+          <form onSubmit={handleUploadResource} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-muted mb-1">
-                Target Subject *
+                Target Syllabus *
               </label>
               <select
                 value={selectedSubjectId}
                 onChange={(e) => setSelectedSubjectId(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl border border-sage-200 bg-ivory-50 text-slate-muted text-xs font-medium focus:ring-2 focus:ring-sage-400"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-sage-200 bg-ivory-50 text-slate-muted text-xs font-medium focus:ring-2 focus:ring-sage-400"
               >
                 {subjects.map((sub) => (
                   <option key={sub.id} value={sub.id}>
@@ -125,12 +137,12 @@ export default function CoursesManagementView({ subjects }: CoursesManagementVie
 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-muted mb-1">
-                Document Title *
+                Resource Title *
               </label>
               <input
                 type="text"
                 required
-                placeholder="CAIE Syllabus Lecture Notes & Worked Solutions"
+                placeholder="e.g. Pure Mathematics 3: Vectors & Lines Master Note"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full px-3.5 py-2 rounded-xl border border-sage-200 bg-ivory-50 text-slate-muted text-xs focus:ring-2 focus:ring-sage-400"
@@ -139,7 +151,7 @@ export default function CoursesManagementView({ subjects }: CoursesManagementVie
 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-muted mb-1">
-                Curriculum Topic *
+                Topic / Chapter Area *
               </label>
               <input
                 type="text"
@@ -164,24 +176,17 @@ export default function CoursesManagementView({ subjects }: CoursesManagementVie
               />
             </div>
 
-
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-muted mb-1">
-                Select File (PDF, DOCX, ZIP up to 15MB) *
-              </label>
-              <input
-                type="file"
-                required
-                accept=".pdf,.docx,.doc,.zip,.jpg,.png"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-                className="w-full text-xs text-slate-soft file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-sage-200 file:text-slate-900 hover:file:bg-sage-300"
-              />
-            </div>
+            {/* Google Drive Dual-Mode Component */}
+            <GoogleDriveUpload
+              onSelected={setDriveResult}
+              label="Resource Attachment *"
+              hint="Paste a Google Drive/Docs link or upload a PDF/DOCX (Max 15MB)."
+            />
 
             <button
               type="submit"
-              disabled={uploading || !file}
-              className="w-full py-3 px-4 rounded-xl bg-sage-300 hover:bg-sage-400 text-slate-900 font-bold text-xs shadow-xs transition-colors disabled:opacity-60"
+              disabled={uploading || !driveResult}
+              className="w-full py-3 px-4 rounded-xl bg-sage-300 hover:bg-sage-400 text-slate-900 font-bold text-xs shadow-xs transition-colors disabled:opacity-50"
             >
               {uploading ? 'Publishing Study Drop...' : 'Publish to Students'}
             </button>
@@ -206,34 +211,55 @@ export default function CoursesManagementView({ subjects }: CoursesManagementVie
             </p>
           ) : (
             <div className="space-y-3">
-              {currentSubject.materials.map((mat: any) => (
-                <div
-                  key={mat.id}
-                  className="p-4 rounded-2xl bg-ivory-50 border border-sage-200 flex items-center justify-between gap-4 text-xs"
-                >
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-muted">{mat.title}</span>
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-sage-200 text-slate-800">
-                        {mat.fileType}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-sage-800 font-medium mt-0.5">Topic: {mat.topic}</p>
-                    <p className="text-[11px] text-slate-light mt-0.5">
-                      {mat.fileSize} • Uploaded {new Date(mat.createdAt).toLocaleDateString('en-GB')}
-                    </p>
-                  </div>
-
-                  <a
-                    href={mat.fileUrl}
-                    download
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sage-300 hover:bg-sage-400 text-slate-900 font-semibold text-xs transition-colors shrink-0"
+              {currentSubject.materials.map((mat: any) => {
+                const driveInfo = parseGoogleDriveUrl(mat.fileUrl);
+                return (
+                  <div
+                    key={mat.id}
+                    className="p-4 rounded-2xl bg-ivory-50 border border-sage-200 flex items-center justify-between gap-4 text-xs"
                   >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Download</span>
-                  </a>
-                </div>
-              ))}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-muted truncate">{mat.title}</span>
+                        {driveInfo.isGoogleDrive ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200 shrink-0">
+                            Google Drive
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-sage-200 text-slate-800 shrink-0">
+                            {mat.fileType}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-sage-800 font-medium mt-0.5 truncate">Topic: {mat.topic}</p>
+                      <p className="text-[11px] text-slate-light mt-0.5">
+                        {mat.fileSize} • Uploaded {new Date(mat.createdAt).toLocaleDateString('en-GB')}
+                      </p>
+                    </div>
+
+                    {driveInfo.isGoogleDrive ? (
+                      <a
+                        href={driveInfo.viewUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-300 font-semibold text-xs transition-colors shrink-0"
+                      >
+                        <span>Open Drive</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    ) : (
+                      <a
+                        href={mat.fileUrl}
+                        download
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sage-300 hover:bg-sage-400 text-slate-900 font-semibold text-xs transition-colors shrink-0"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Download</span>
+                      </a>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
