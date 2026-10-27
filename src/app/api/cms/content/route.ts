@@ -86,23 +86,35 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { updates, items, key, value } = body;
 
-    const itemsToUpdate: Array<{ key: string; value: string }> = [];
+    const itemMap = new Map<string, string>();
 
-    if (key && typeof value === 'string') {
-      itemsToUpdate.push({ key, value });
-    } else if (Array.isArray(items)) {
-      for (const it of items) {
-        if (it && it.key && typeof it.value === 'string') {
-          itemsToUpdate.push({ key: it.key, value: it.value });
+    const processItemArray = (arr: any[]) => {
+      for (const it of arr) {
+        if (it && typeof it.key === 'string' && typeof it.value === 'string') {
+          itemMap.set(it.key, it.value);
         }
       }
+    };
+
+    if (key && typeof value === 'string') {
+      itemMap.set(key, value);
+    }
+
+    if (Array.isArray(updates)) {
+      processItemArray(updates);
     } else if (updates && typeof updates === 'object') {
       for (const [k, v] of Object.entries(updates)) {
         if (typeof v === 'string') {
-          itemsToUpdate.push({ key: k, value: v });
+          itemMap.set(k, v);
         }
       }
     }
+
+    if (Array.isArray(items)) {
+      processItemArray(items);
+    }
+
+    const itemsToUpdate = Array.from(itemMap.entries()).map(([k, v]) => ({ key: k, value: v }));
 
     if (itemsToUpdate.length === 0) {
       return NextResponse.json(

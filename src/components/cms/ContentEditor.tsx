@@ -94,7 +94,7 @@ export default function ContentEditor({ category }: { category: CmsCategory }) {
       const res = await fetch('/api/cms/content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ updates }),
+        body: JSON.stringify({ updates, items: updates }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Save failed');
