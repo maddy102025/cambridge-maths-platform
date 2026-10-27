@@ -15,6 +15,7 @@ import {
   ChevronRight,
   GraduationCap
 } from 'lucide-react';
+import { useCms } from '@/lib/useCms';
 
 interface AdminSidebarProps {
   user: {
@@ -27,6 +28,7 @@ interface AdminSidebarProps {
 export default function AdminSidebar({ user }: AdminSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { cms } = useCms();
 
   const navItems = [
     { name: 'Dashboard Hub', href: '/admin', icon: LayoutDashboard },
@@ -54,8 +56,12 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
         {/* Brand Header */}
         <div className="pb-5 border-b border-sage-200">
           <Link href="/admin" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-slate-muted text-sage-300 flex items-center justify-center font-bold font-mono text-xl shadow-sm">
-              ∑
+            <div className="w-10 h-10 rounded-xl bg-slate-muted text-sage-300 flex items-center justify-center font-bold font-mono text-xl shadow-sm overflow-hidden">
+              {cms('global_site_logo_url') ? (
+                <img src={cms('global_site_logo_url')} alt="Logo" className="w-full h-full object-contain p-1" />
+              ) : (
+                '∑'
+              )}
             </div>
             <div>
               <h2 className="font-bold text-slate-muted text-sm tracking-tight">Instructor Workspace</h2>
@@ -68,8 +74,12 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
 
         {/* Teacher profile badge */}
         <div className="my-4 p-3 rounded-2xl bg-white border border-sage-200 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-sage-200 text-slate-muted font-bold text-xs flex items-center justify-center shrink-0">
-            {user.fullName.split(' ').map((n) => n[0]).join('').substring(0, 2)}
+          <div className="w-9 h-9 rounded-xl bg-sage-200 text-slate-muted font-bold text-xs flex items-center justify-center shrink-0 overflow-hidden">
+            {cms('global_instructor_avatar_url') ? (
+              <img src={cms('global_instructor_avatar_url')} alt={user.fullName} className="w-full h-full object-cover" />
+            ) : (
+              user.fullName.split(' ').map((n) => n[0]).join('').substring(0, 2)
+            )}
           </div>
           <div className="overflow-hidden">
             <p className="text-xs font-bold text-slate-muted truncate">{user.fullName}</p>

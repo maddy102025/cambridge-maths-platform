@@ -25,8 +25,16 @@ export default function PublicNavbar() {
         <div className="flex items-center justify-between h-20">
           {/* Logo / Teacher Wordmark */}
           <Link href="/" className="flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-sage-400 rounded-lg p-1">
-            <div className="w-10 h-10 rounded-xl bg-sage-300 flex items-center justify-center text-slate-muted font-bold text-xl shadow-sm border border-sage-400/50 group-hover:bg-sage-400 transition-colors">
-              <span className="font-mono text-slate-900">∑</span>
+            <div className="w-10 h-10 rounded-xl bg-sage-300 flex items-center justify-center text-slate-muted font-bold text-xl shadow-sm border border-sage-400/50 group-hover:bg-sage-400 transition-colors overflow-hidden">
+              {cms('public_nav_logo_url') || cms('global_site_logo_url') ? (
+                <img
+                  src={cms('public_nav_logo_url') || cms('global_site_logo_url')}
+                  alt="Logo"
+                  className="w-full h-full object-contain p-1"
+                />
+              ) : (
+                <span className="font-mono text-slate-900">∑</span>
+              )}
             </div>
             <div className="flex flex-col">
               <span className="font-semibold text-lg tracking-tight text-slate-muted group-hover:text-slate-900 transition-colors">

@@ -5,13 +5,57 @@ export interface CmsItem {
   category: 'PUBLIC' | 'STUDENT' | 'TEACHER' | 'GLOBAL';
   label: string;
   value: string;
-  type: 'text' | 'textarea' | 'number';
+  type: 'text' | 'textarea' | 'number' | 'image';
   description?: string;
   updatedAt?: string;
   updatedBy?: string;
 }
 
 export const INITIAL_CMS_DATA: CmsItem[] = [
+  // ==========================================
+  // GLOBAL SITE BRANDING & MEDIA (CLOUDFLARE R2)
+  // ==========================================
+  {
+    id: 'cms_global_site_logo_url',
+    key: 'global_site_logo_url',
+    section: 'global_media',
+    category: 'GLOBAL',
+    label: 'Site Brand Logo (R2 URL)',
+    value: '',
+    type: 'image',
+    description: 'Header and footer branding logo. Provide an R2 media link (/media/...) or select from library.',
+  },
+  {
+    id: 'cms_global_site_favicon_url',
+    key: 'global_site_favicon_url',
+    section: 'global_media',
+    category: 'GLOBAL',
+    label: 'Browser Favicon Icon (R2 URL)',
+    value: '',
+    type: 'image',
+    description: 'Browser tab icon (.ico, .png, .svg). Provide an R2 media link or select from library.',
+  },
+  {
+    id: 'cms_global_instructor_avatar_url',
+    key: 'global_instructor_avatar_url',
+    section: 'global_media',
+    category: 'GLOBAL',
+    label: 'Teacher Profile Avatar / Portrait (R2 URL)',
+    value: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80',
+    type: 'image',
+    description: 'Lead educator portrait photo on homepage hero and workspaces.',
+  },
+  {
+    id: 'cms_global_student_default_avatar_url',
+    key: 'global_student_default_avatar_url',
+    section: 'global_media',
+    category: 'GLOBAL',
+    label: 'Student Default Avatar (R2 URL)',
+    value: '',
+    type: 'image',
+    description: 'Default fallback avatar for enrolled candidates on student portal.',
+  },
+
   // ==========================================
   // GLOBAL SITE SETTINGS
   // ==========================================
@@ -118,6 +162,16 @@ export const INITIAL_CMS_DATA: CmsItem[] = [
     value: 'Cambridge O & A Levels Mathematics',
     type: 'text',
     description: 'Sub-label beneath the logo',
+  },
+  {
+    id: 'cms_public_nav_logo_url',
+    key: 'public_nav_logo_url',
+    section: 'public_navbar',
+    category: 'PUBLIC',
+    label: 'Navbar Custom Logo (R2 URL)',
+    value: '',
+    type: 'image',
+    description: 'Custom logo image in public navbar. Leave empty to use Global Site Logo.',
   },
   {
     id: 'cms_public_nav_btn_student_login',

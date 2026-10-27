@@ -15,6 +15,7 @@ import {
   X,
   Sparkles
 } from 'lucide-react';
+import { useCms } from '@/lib/useCms';
 
 interface StudentSidebarProps {
   user: {
@@ -30,6 +31,7 @@ interface StudentSidebarProps {
 export default function StudentSidebar({ user, unreadCount = 0 }: StudentSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { cms } = useCms();
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   const navItems = [
@@ -69,8 +71,12 @@ export default function StudentSidebar({ user, unreadCount = 0 }: StudentSidebar
       {/* Mobile Header Bar */}
       <div className="lg:hidden sticky top-0 z-40 bg-white border-b border-sage-200 px-4 py-3 flex items-center justify-between shadow-sm">
         <Link href="/student/home" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-sage-300 flex items-center justify-center font-bold font-mono text-slate-900 text-sm">
-            ∑
+          <div className="w-8 h-8 rounded-lg bg-sage-300 flex items-center justify-center font-bold font-mono text-slate-900 text-sm overflow-hidden">
+            {cms('global_site_logo_url') ? (
+              <img src={cms('global_site_logo_url')} alt="Logo" className="w-full h-full object-contain p-0.5" />
+            ) : (
+              '∑'
+            )}
           </div>
           <span className="font-bold text-slate-muted text-sm tracking-tight">Cambridge Portal</span>
         </Link>
@@ -107,8 +113,12 @@ export default function StudentSidebar({ user, unreadCount = 0 }: StudentSidebar
             <div>
               <div className="flex items-center justify-between pb-4 border-b border-sage-200">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-sage-300 flex items-center justify-center font-bold font-mono text-slate-900">
-                    ∑
+                  <div className="w-9 h-9 rounded-xl bg-sage-300 flex items-center justify-center font-bold font-mono text-slate-900 overflow-hidden">
+                    {cms('global_site_logo_url') ? (
+                      <img src={cms('global_site_logo_url')} alt="Logo" className="w-full h-full object-contain p-0.5" />
+                    ) : (
+                      '∑'
+                    )}
                   </div>
                   <div>
                     <h4 className="font-bold text-slate-muted text-sm leading-tight">Ms. Eleanor Vance</h4>
@@ -183,19 +193,31 @@ export default function StudentSidebar({ user, unreadCount = 0 }: StudentSidebar
         <div>
           {/* Logo Wordmark */}
           <Link href="/student/home" className="flex items-center gap-3 pb-6 border-b border-sage-200">
-            <div className="w-10 h-10 rounded-xl bg-sage-300 flex items-center justify-center font-bold font-mono text-slate-900 text-lg shadow-sm border border-sage-400/60">
-              ∑
+            <div className="w-10 h-10 rounded-xl bg-sage-300 flex items-center justify-center font-bold font-mono text-slate-900 text-lg shadow-sm border border-sage-400/60 overflow-hidden">
+              {cms('global_site_logo_url') ? (
+                <img src={cms('global_site_logo_url')} alt="Logo" className="w-full h-full object-contain p-0.5" />
+              ) : (
+                '∑'
+              )}
             </div>
             <div>
-              <h2 className="font-bold text-slate-muted text-sm tracking-tight">Ms. Eleanor Vance</h2>
+              <h2 className="font-bold text-slate-muted text-sm tracking-tight">{cms('global_instructor_name', 'Ms. Eleanor Vance')}</h2>
               <p className="text-[11px] uppercase tracking-wider text-slate-soft font-medium">Student Portal</p>
             </div>
           </Link>
 
           {/* Student mini profile badge */}
           <div className="my-5 p-3 rounded-2xl bg-white border border-sage-200 subtle-paper-shadow flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-sage-200 text-slate-muted font-bold text-sm flex items-center justify-center shrink-0">
-              {getInitials(user.fullName)}
+            <div className="w-10 h-10 rounded-xl bg-sage-200 text-slate-muted font-bold text-sm flex items-center justify-center shrink-0 overflow-hidden">
+              {user.avatarUrl || cms('global_student_default_avatar_url') ? (
+                <img
+                  src={user.avatarUrl || cms('global_student_default_avatar_url')}
+                  alt={user.fullName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                getInitials(user.fullName)
+              )}
             </div>
             <div className="overflow-hidden">
               <p className="text-xs font-bold text-slate-muted truncate">{user.fullName}</p>

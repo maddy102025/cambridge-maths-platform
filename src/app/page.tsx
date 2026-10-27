@@ -188,8 +188,8 @@ export default function HomePage() {
                 <div className="relative rounded-3xl overflow-hidden bg-white border border-sage-300/80 subtle-paper-shadow p-3">
                   <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-ivory-200 flex flex-col justify-end">
                     <img
-                      src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80"
-                      alt="Ms. Eleanor Vance - Cambridge Mathematics Teacher"
+                      src={cms('global_instructor_avatar_url') || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80'}
+                      alt={cms('global_instructor_name', 'Ms. Eleanor Vance - Cambridge Mathematics Teacher')}
                       className="w-full h-full object-cover object-top"
                     />
 

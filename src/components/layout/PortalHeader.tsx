@@ -15,6 +15,7 @@ import {
   LogOut,
   ChevronDown
 } from 'lucide-react';
+import { useCms } from '@/lib/useCms';
 
 export interface PortalHeaderProps {
   role: 'STUDENT' | 'TEACHER' | 'ADMIN' | 'SuperAdmin';
@@ -41,9 +42,14 @@ export default function PortalHeader({
   onMenuClick,
 }: PortalHeaderProps) {
   const router = useRouter();
+  const { cms } = useCms();
   const isSuperAdmin = role === 'SuperAdmin' || user.role === 'SuperAdmin';
   const isTeacher = role === 'TEACHER' || role === 'ADMIN';
   const isStudent = role === 'STUDENT';
+
+  const effectiveAvatar =
+    user.avatarUrl ||
+    (isTeacher ? cms('global_instructor_avatar_url', '') : cms('global_student_default_avatar_url', ''));
 
   const todayFormatted = new Intl.DateTimeFormat('en-GB', {
     weekday: 'short',
@@ -218,8 +224,12 @@ export default function PortalHeader({
 
         {/* User Pill */}
         <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-sage-200">
-          <div className="w-8 h-8 rounded-xl bg-sage-200 text-slate-900 font-bold text-xs flex items-center justify-center font-mono">
-            {user.fullName.charAt(0).toUpperCase()}
+          <div className="w-8 h-8 rounded-xl bg-sage-200 text-slate-900 font-bold text-xs flex items-center justify-center font-mono overflow-hidden">
+            {effectiveAvatar ? (
+              <img src={effectiveAvatar} alt={user.fullName} className="w-full h-full object-cover" />
+            ) : (
+              user.fullName.charAt(0).toUpperCase()
+            )}
           </div>
           <div className="hidden sm:block text-left">
             <p className="text-xs font-bold text-slate-muted truncate max-w-[120px]">{user.fullName}</p>

@@ -92,10 +92,12 @@ A separate auth layer (role `SuperAdmin`, cookie `cambridge_cms_token`, 24h JWT 
 | `/cms/public` · `/cms/student` · `/cms/teacher` · `/cms/global` | Section editors with search, per-field revert, per-section reset, sticky Publish bar |
 | `/cms/account` | Session info and security notes |
 
-- **Cloudflare R2 Media Management**:
+- **Cloudflare R2 Media Management & Asset Assignment**:
   - Bucket: `cambridge-maths-media` bound to `MEDIA_BUCKET` in `wrangler.toml`.
   - Static and permanent media assets are served directly from the edge via `/media/:key` with HTTP metadata and caching headers.
-  - Dedicated CMS interface (`src/components/cms/MediaManager.tsx`, `/cms/media`) for SuperAdmin to upload branding assets, badges, banners, course thumbnails, and static documents.
+  - Dedicated CMS interface (`src/components/cms/MediaManager.tsx`, `/cms/media`) for SuperAdmin to upload branding assets, badges, banners, course thumbnails, and static documents with 1-click "Set as Logo", "Set as Favicon", and "Set as Avatar" actions.
+  - Interactive **R2 Media Picker Modal** (`src/components/cms/R2MediaPickerModal.tsx`) integrated into all CMS section editors (`ContentEditor.tsx`) allowing direct browsing, searching, live previews, and on-the-spot uploads to R2.
+  - Dynamic branding: Brand Logo (`global_site_logo_url`), Browser Favicon (`global_site_favicon_url` via `FaviconHead.tsx`), and Teacher/Student Avatars (`global_instructor_avatar_url`, `global_student_default_avatar_url`) consume R2 links dynamically application-wide.
 - **Google Drive Storage Integration**:
   - Student uploads, quest assignment submissions, and teacher study drops support shareable Google Drive links alongside direct file attachments.
   - Automatic URL parsing and metadata formatting (`src/lib/googleDrive.ts`, `src/components/common/GoogleDriveUpload.tsx`) with direct preview links and file type badges (Google Docs, Sheets, Slides, Folders, PDF, ZIP).

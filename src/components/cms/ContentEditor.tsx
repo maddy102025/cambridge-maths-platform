@@ -11,9 +11,12 @@ import {
   CheckCircle2,
   AlertCircle,
   ExternalLink,
+  HardDrive,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { CMS_CATEGORIES, CmsCategory, sectionLabel } from '@/lib/cmsMeta';
 import { DEFAULT_CMS_MAP } from '@/lib/cmsData';
+import R2MediaPickerModal from './R2MediaPickerModal';
 
 interface Item {
   key: string;
@@ -21,7 +24,7 @@ interface Item {
   category: string;
   label: string;
   value: string;
-  type: 'text' | 'textarea' | 'number';
+  type: 'text' | 'textarea' | 'number' | 'image';
   description?: string;
 }
 
@@ -35,6 +38,11 @@ export default function ContentEditor({ category }: { category: CmsCategory }) {
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [toast, setToast] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+  const [mediaPickerTarget, setMediaPickerTarget] = useState<{
+    key: string;
+    label: string;
+    hint: 'logo' | 'favicon' | 'avatar' | 'media';
+  } | null>(null);
 
   const showToast = (kind: 'ok' | 'err', text: string) => {
     setToast({ kind, text });
@@ -193,7 +201,14 @@ export default function ContentEditor({ category }: { category: CmsCategory }) {
                   <div className="px-5 pb-5 grid gap-5 md:grid-cols-2 border-t border-white/5 pt-5">
                     {list.map((i) => {
                       const isDirty = draft[i.key] !== saved[i.key];
-                      const wide = i.type === 'textarea';
+                      const isImageField =
+                        i.type === 'image' ||
+                        i.key.includes('logo') ||
+                        i.key.includes('avatar') ||
+                        i.key.includes('favicon') ||
+                        i.key.includes('image') ||
+                        i.key.includes('media');
+                      const wide = i.type === 'textarea' || isImageField;
                       return (
                         <div key={i.key} className={wide ? 'md:col-span-2' : ''}>
                           <div className="flex items-center justify-between mb-1.5">
@@ -219,6 +234,57 @@ export default function ContentEditor({ category }: { category: CmsCategory }) {
                               onChange={(e) => setDraft((d) => ({ ...d, [i.key]: e.target.value }))}
                               className={`${inputCls} resize-y`}
                             />
+                          ) : isImageField ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <div className="w-10 h-10 shrink-0 rounded-xl bg-black/40 border border-white/10 flex items-center justify-center overflow-hidden p-1 shadow-inner">
+                                  {draft[i.key] ? (
+                                    <img
+                                      src={draft[i.key]}
+                                      alt={i.label}
+                                      className="w-full h-full object-contain"
+                                      onError={(e) => {
+                                        (e.target as HTMLElement).style.display = 'none';
+                                      }}
+                                    />
+                                  ) : (
+                                    <ImageIcon className="w-4 h-4 text-slate-600" />
+                                  )}
+                                </div>
+                                <div className="flex-1">
+                                  <input
+                                    id={`f-${i.key}`}
+                                    type="text"
+                                    maxLength={5000}
+                                    placeholder="e.g. /media/media_... or paste direct link"
+                                    value={draft[i.key] ?? ''}
+                                    onChange={(e) => setDraft((d) => ({ ...d, [i.key]: e.target.value }))}
+                                    className={inputCls}
+                                  />
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setMediaPickerTarget({
+                                      key: i.key,
+                                      label: i.label,
+                                      hint: i.key.includes('logo')
+                                        ? 'logo'
+                                        : i.key.includes('favicon')
+                                        ? 'favicon'
+                                        : i.key.includes('avatar')
+                                        ? 'avatar'
+                                        : 'media',
+                                    })
+                                  }
+                                  className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 border border-amber-400/20 text-xs font-semibold shrink-0 transition"
+                                  title="Browse or upload to Cloudflare R2"
+                                >
+                                  <HardDrive className="w-3.5 h-3.5" />
+                                  <span>R2 Media</span>
+                                </button>
+                              </div>
+                            </div>
                           ) : (
                             <input
                               id={`f-${i.key}`}
@@ -279,6 +345,19 @@ export default function ContentEditor({ category }: { category: CmsCategory }) {
           {toast.kind === 'ok' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
           {toast.text}
         </div>
+      )}
+
+      {mediaPickerTarget && (
+        <R2MediaPickerModal
+          isOpen={Boolean(mediaPickerTarget)}
+          onClose={() => setMediaPickerTarget(null)}
+          onSelect={(url) => {
+            setDraft((d) => ({ ...d, [mediaPickerTarget.key]: url }));
+          }}
+          currentValue={draft[mediaPickerTarget.key] ?? ''}
+          title={`Select ${mediaPickerTarget.label} from R2`}
+          targetHint={mediaPickerTarget.hint}
+        />
       )}
     </div>
   );

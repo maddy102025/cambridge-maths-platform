@@ -43,11 +43,33 @@ export default function MediaManager() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [applyingKey, setApplyingKey] = useState<string | null>(null);
   const [toast, setToast] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
 
   const showToast = (kind: 'ok' | 'err', text: string) => {
     setToast({ kind, text });
     setTimeout(() => setToast(null), 3500);
+  };
+
+  const applyMediaToCmsKey = async (cmsKey: string, url: string, label: string) => {
+    setApplyingKey(`${cmsKey}-${url}`);
+    try {
+      const res = await fetch('/api/cms/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          updates: [{ key: cmsKey, value: url }],
+          items: [{ key: cmsKey, value: url }],
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update CMS');
+      showToast('ok', `Assigned as ${label} ("${url}").`);
+    } catch (e: any) {
+      showToast('err', e.message || 'Failed to update CMS field');
+    } finally {
+      setApplyingKey(null);
+    }
   };
 
   const loadMedia = useCallback(async () => {
@@ -336,6 +358,40 @@ export default function MediaManager() {
                     <span>{formatSize(item.sizeBytes)}</span>
                     <span>{new Date(item.createdAt).toLocaleDateString()}</span>
                   </div>
+
+                  {/* Quick Set Buttons for images */}
+                  {isImage && (
+                    <div className="pt-2 border-t border-white/5 flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] text-slate-500 font-medium">Quick Apply:</span>
+                      <button
+                        type="button"
+                        onClick={() => applyMediaToCmsKey('global_site_logo_url', item.url, 'Site Brand Logo')}
+                        disabled={applyingKey !== null}
+                        className="px-2 py-0.5 rounded-md bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 border border-amber-400/20 text-[10px] font-semibold transition"
+                        title="Set as global site brand logo"
+                      >
+                        Set as Logo
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyMediaToCmsKey('global_site_favicon_url', item.url, 'Favicon Icon')}
+                        disabled={applyingKey !== null}
+                        className="px-2 py-0.5 rounded-md bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 border border-amber-400/20 text-[10px] font-semibold transition"
+                        title="Set as browser tab favicon icon"
+                      >
+                        Set as Favicon
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyMediaToCmsKey('global_instructor_avatar_url', item.url, 'Teacher Profile Avatar')}
+                        disabled={applyingKey !== null}
+                        className="px-2 py-0.5 rounded-md bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 border border-amber-400/20 text-[10px] font-semibold transition"
+                        title="Set as lead instructor portrait avatar"
+                      >
+                        Set as Avatar
+                      </button>
+                    </div>
+                  )}
 
                   {/* Actions */}
                   <div className="flex items-center gap-2 pt-1">

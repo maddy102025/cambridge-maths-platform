@@ -16,8 +16,16 @@ export default function PublicFooter() {
           {/* Column 1: Teacher Brand & Philosophy */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-sage-300 flex items-center justify-center text-slate-muted font-bold text-xl shadow-sm border border-sage-400/50">
-                <span className="font-mono text-slate-900">∑</span>
+              <div className="w-10 h-10 rounded-xl bg-sage-300 flex items-center justify-center text-slate-muted font-bold text-xl shadow-sm border border-sage-400/50 overflow-hidden">
+                {cms('global_site_logo_url') ? (
+                  <img
+                    src={cms('global_site_logo_url')}
+                    alt="Logo"
+                    className="w-full h-full object-contain p-1"
+                  />
+                ) : (
+                  <span className="font-mono text-slate-900">∑</span>
+                )}
               </div>
               <div className="flex flex-col">
                 <span className="font-semibold text-lg tracking-tight text-slate-muted">

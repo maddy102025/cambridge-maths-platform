@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import FaviconHead from '@/components/common/FaviconHead';
 
 export const metadata: Metadata = {
   title: 'Cambridge O & A Levels Mathematics | Ms. Eleanor Vance',
@@ -23,6 +24,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-ivory-100 text-slate-muted min-h-screen flex flex-col selection:bg-sage-300 selection:text-slate-900">
+        <FaviconHead />
         {children}
       </body>
     </html>
