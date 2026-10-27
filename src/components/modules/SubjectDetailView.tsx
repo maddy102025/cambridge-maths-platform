@@ -376,7 +376,7 @@ export default function SubjectDetailView({ subject, userRole }: SubjectDetailVi
               <Search className="w-4 h-4 text-slate-light absolute left-3.5 top-3" />
               <input
                 type="text"
-                placeholder="Search notes or topics..."
+                placeholder="Search syllabus lecture notes, mark schemes, or formula packs..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-4 py-2 rounded-xl border border-sage-200 bg-ivory-50 text-xs text-slate-muted focus:outline-none focus:ring-2 focus:ring-sage-400 focus:bg-white"
@@ -511,7 +511,7 @@ export default function SubjectDetailView({ subject, userRole }: SubjectDetailVi
                 <input
                   type="text"
                   required
-                  placeholder="e.g. November 2024 Past Paper 2 Working - Questions 1 to 5"
+                  placeholder="Paper series and question references (e.g. Pure 1 Calculus Working)"
                   value={uploadTitle}
                   onChange={(e) => setUploadTitle(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl border border-sage-200 bg-ivory-50 text-slate-muted text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 focus:bg-white"
@@ -524,7 +524,7 @@ export default function SubjectDetailView({ subject, userRole }: SubjectDetailVi
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Trigonometric Identities or Coordinate Geometry"
+                  placeholder="CAIE Syllabus topic (e.g. Differentiation & Integration Techniques)"
                   value={uploadTopic}
                   onChange={(e) => setUploadTopic(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl border border-sage-200 bg-ivory-50 text-slate-muted text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 focus:bg-white"
@@ -537,7 +537,7 @@ export default function SubjectDetailView({ subject, userRole }: SubjectDetailVi
                 </label>
                 <textarea
                   rows={3}
-                  placeholder="Specific questions you need help with..."
+                  placeholder="Outline method hurdles or specific step proofs requiring marking feedback..."
                   value={uploadDesc}
                   onChange={(e) => setUploadDesc(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl border border-sage-200 bg-ivory-50 text-slate-muted text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 focus:bg-white resize-none"

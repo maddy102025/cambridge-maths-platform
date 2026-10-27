@@ -155,7 +155,7 @@ export default function LoginPage() {
               <span className="text-[10px] text-slate-light">Click to autofill</span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => handleFillDemo('student@cambridgemaths.edu', 'StudentPass123!')}
@@ -163,9 +163,9 @@ export default function LoginPage() {
               >
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-muted group-hover:text-slate-900">
                   <UserCheck className="w-3.5 h-3.5 text-sage-600" />
-                  <span>Student Demo</span>
+                  <span>Student</span>
                 </div>
-                <div className="text-[11px] text-slate-light truncate mt-0.5">Sarah Ahmed (O Level)</div>
+                <div className="text-[10px] text-slate-light truncate mt-0.5">Sarah Ahmed</div>
               </button>
 
               <button
@@ -175,11 +175,12 @@ export default function LoginPage() {
               >
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-muted group-hover:text-slate-900">
                   <ShieldCheck className="w-3.5 h-3.5 text-sage-600" />
-                  <span>Teacher Demo</span>
+                  <span>Teacher</span>
                 </div>
-                <div className="text-[11px] text-slate-light truncate mt-0.5">Ms. Eleanor Vance</div>
+                <div className="text-[10px] text-slate-light truncate mt-0.5">Ms. Eleanor Vance</div>
               </button>
             </div>
+
           </div>
         </div>
 

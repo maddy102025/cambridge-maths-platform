@@ -326,8 +326,7 @@ export default function AssignmentGradingView({
                         type="number"
                         step="0.5"
                         max={selectedSub.assignment.maxMarks}
-                        min="0"
-                        placeholder="e.g. 48"
+                        placeholder="Score (e.g. 85)"
                         value={score}
                         onChange={(e) => setScore(e.target.value)}
                         className="w-full px-3.5 py-2 rounded-xl border border-sage-200 bg-ivory-50 text-slate-muted font-mono font-bold text-sm focus:ring-2 focus:ring-sage-400 focus:bg-white"
@@ -359,7 +358,7 @@ export default function AssignmentGradingView({
                     </label>
                     <textarea
                       rows={4}
-                      placeholder="Highlight areas of algebraic accuracy, examiner notation points, and exact errors in problem solving..."
+                      placeholder="Detail Method (M) and Accuracy (A) marks, notation slips, and step-by-step model corrections..."
                       value={feedback}
                       onChange={(e) => setFeedback(e.target.value)}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-sage-200 bg-ivory-50 text-slate-muted text-xs leading-relaxed focus:ring-2 focus:ring-sage-400 focus:bg-white resize-none"
@@ -455,7 +454,7 @@ export default function AssignmentGradingView({
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Problem Set 6: Coordinate Geometry & Circle Equations"
+                  placeholder="Cambridge Problem Set Title (e.g. Pure Mathematics Differential Equations & Vector Lines)"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-sage-200 bg-ivory-50 text-slate-muted text-xs focus:ring-2 focus:ring-sage-400"
@@ -498,7 +497,7 @@ export default function AssignmentGradingView({
               <textarea
                 rows={4}
                 required
-                placeholder="Detail required steps, graph paper rules, and whether calculators are permitted..."
+                placeholder="Mandatory working steps, standard CAIE notation rules, graph paper requirements, and calculator permissions..."
                 value={newInstructions}
                 onChange={(e) => setNewInstructions(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-sage-200 bg-ivory-50 text-slate-muted text-xs leading-relaxed resize-none focus:ring-2 focus:ring-sage-400"

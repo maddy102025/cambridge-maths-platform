@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useCms } from '@/lib/useCms';
 import {
   Users,
   BookOpen,
@@ -11,10 +12,12 @@ import {
   Sparkles,
   CalendarCheck,
   Megaphone,
-  CheckCircle2
+  CheckCircle2,
+  ShieldCheck
 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
+  const { cms } = useCms();
   const [data, setData] = useState<any>(null);
 
   useEffect(() => {
@@ -44,22 +47,34 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sage-200 text-slate-800 text-xs font-bold uppercase tracking-wider mb-2">
-          <span>Instructor Administration</span>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sage-200 text-slate-800 text-xs font-bold uppercase tracking-wider mb-2">
+            <span>{cms('teacher_dash_badge', 'Faculty Administration Hub')}</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-muted tracking-tight">
+            {cms('teacher_dash_title', 'Cambridge Academic Overview & Cohort Management')}
+          </h1>
+          <p className="text-sm text-slate-soft mt-1 max-w-3xl">
+            {cms('teacher_dash_subtitle', 'Manage Cambridge O & A Levels courses, evaluate student submissions against mark schemes, track attendance, and broadcast alerts.')}
+          </p>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-muted tracking-tight">
-          Cambridge Academic Overview
-        </h1>
-        <p className="text-sm text-slate-soft mt-1">
-          Manage Cambridge O & A Levels courses, student enrollments, submissions, and grading.
-        </p>
+
+        <Link
+          href="/cms"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 transition-all shrink-0"
+        >
+          <ShieldCheck className="w-4 h-4" />
+          <span>SuperAdmin CMS Suite</span>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <div className="bg-white p-5 rounded-2xl border border-sage-200 subtle-paper-shadow">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-light">Registered Students</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-light">
+              {cms('teacher_dash_card1_title', 'Registered Candidates')}
+            </span>
             <div className="w-8 h-8 rounded-lg bg-sage-100 flex items-center justify-center text-slate-muted">
               <Users className="w-4 h-4 text-slate-muted" />
             </div>
@@ -70,7 +85,9 @@ export default function AdminDashboardPage() {
 
         <div className="bg-white p-5 rounded-2xl border border-sage-200 subtle-paper-shadow">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-light">Submissions To Grade</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-light">
+              {cms('teacher_dash_card2_title', 'Submissions To Grade')}
+            </span>
             <div className="w-8 h-8 rounded-lg bg-sage-100 flex items-center justify-center text-slate-muted">
               <CheckSquare className="w-4 h-4 text-amber-700" />
             </div>
@@ -81,7 +98,9 @@ export default function AdminDashboardPage() {
 
         <div className="bg-white p-5 rounded-2xl border border-sage-200 subtle-paper-shadow">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-light">Active Syllabuses</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-light">
+              {cms('teacher_dash_card3_title', 'Active Syllabuses')}
+            </span>
             <div className="w-8 h-8 rounded-lg bg-sage-100 flex items-center justify-center text-slate-muted">
               <BookOpen className="w-4 h-4 text-slate-muted" />
             </div>
@@ -92,7 +111,9 @@ export default function AdminDashboardPage() {
 
         <div className="bg-white p-5 rounded-2xl border border-sage-200 subtle-paper-shadow">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-light">New Inquiries</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-light">
+              {cms('teacher_dash_card4_title', 'Admissions Inquiries')}
+            </span>
             <div className="w-8 h-8 rounded-lg bg-sage-100 flex items-center justify-center text-slate-muted">
               <Mail className="w-4 h-4 text-slate-muted" />
             </div>
@@ -110,7 +131,9 @@ export default function AdminDashboardPage() {
             className="p-4 rounded-2xl bg-ivory-50 border border-sage-200 hover:bg-sage-100 transition-colors text-left"
           >
             <CheckSquare className="w-5 h-5 text-slate-muted mb-2" />
-            <h4 className="text-xs font-bold text-slate-muted">Grade Submissions</h4>
+            <h4 className="text-xs font-bold text-slate-muted">
+              {cms('teacher_dash_btn_grade', 'Grade Submissions')}
+            </h4>
             <p className="text-[11px] text-slate-light mt-0.5">Review solutions & publish grades</p>
           </Link>
 
@@ -119,7 +142,9 @@ export default function AdminDashboardPage() {
             className="p-4 rounded-2xl bg-ivory-50 border border-sage-200 hover:bg-sage-100 transition-colors text-left"
           >
             <Sparkles className="w-5 h-5 text-slate-muted mb-2" />
-            <h4 className="text-xs font-bold text-slate-muted">Create Quest</h4>
+            <h4 className="text-xs font-bold text-slate-muted">
+              {cms('teacher_dash_btn_create_quest', 'Assign New Quest')}
+            </h4>
             <p className="text-[11px] text-slate-light mt-0.5">New assignment & prompt</p>
           </Link>
 
@@ -128,7 +153,9 @@ export default function AdminDashboardPage() {
             className="p-4 rounded-2xl bg-ivory-50 border border-sage-200 hover:bg-sage-100 transition-colors text-left"
           >
             <CalendarCheck className="w-5 h-5 text-slate-muted mb-2" />
-            <h4 className="text-xs font-bold text-slate-muted">Log Attendance</h4>
+            <h4 className="text-xs font-bold text-slate-muted">
+              {cms('teacher_dash_btn_attendance', 'Log Live Attendance')}
+            </h4>
             <p className="text-[11px] text-slate-light mt-0.5">Record live class attendance</p>
           </Link>
 
@@ -137,7 +164,9 @@ export default function AdminDashboardPage() {
             className="p-4 rounded-2xl bg-ivory-50 border border-sage-200 hover:bg-sage-100 transition-colors text-left"
           >
             <Megaphone className="w-5 h-5 text-slate-muted mb-2" />
-            <h4 className="text-xs font-bold text-slate-muted">Announce</h4>
+            <h4 className="text-xs font-bold text-slate-muted">
+              {cms('teacher_dash_btn_announce', 'Broadcast Announcement')}
+            </h4>
             <p className="text-[11px] text-slate-light mt-0.5">Broadcast school alerts</p>
           </Link>
         </div>

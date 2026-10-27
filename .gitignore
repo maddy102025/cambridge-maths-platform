@@ -7,3 +7,6 @@ dev.db-journal
 .env
 *.log
 .DS_Store
+
+# Generated CMS seed (contains SuperAdmin password hash) - regenerate with scripts/generate-cms-sql.mjs
+cloudflare/seed-cms.sql

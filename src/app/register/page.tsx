@@ -125,7 +125,7 @@ export default function RegisterPage() {
                   required
                   value={formData.fullName}
                   onChange={handleChange}
-                  placeholder="e.g. Sarah Jenkins"
+                  placeholder="Candidate Full Name"
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-sage-200 bg-ivory-50 text-slate-muted text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 focus:bg-white transition-all"
                 />
               </div>
@@ -146,7 +146,7 @@ export default function RegisterPage() {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="student@example.com"
+                  placeholder="candidate@cambridgemaths.edu"
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-sage-200 bg-ivory-50 text-slate-muted text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 focus:bg-white transition-all"
                 />
               </div>
@@ -167,11 +167,12 @@ export default function RegisterPage() {
                   required
                   value={formData.phone}
                   onChange={handleChange}
-                  placeholder="+44 7911 123456"
+                  placeholder="+44 20 7946 0912"
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-sage-200 bg-ivory-50 text-slate-muted text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 focus:bg-white transition-all"
                 />
               </div>
             </div>
+
 
             <div>
               <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wider text-slate-muted mb-1.5">

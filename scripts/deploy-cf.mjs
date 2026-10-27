@@ -13,7 +13,24 @@ if (fs.existsSync('.env')) {
 }
 
 console.log('--- Deploying Worker + Static Assets + D1 Binding to Cloudflare ---');
-execSync('npx wrangler deploy', {
-  stdio: 'inherit',
-  env: process.env,
-});
+
+let deployed = false;
+for (let attempt = 1; attempt <= 3; attempt++) {
+  try {
+    console.log(`Cloudflare deploy attempt ${attempt}/3...`);
+    execSync('npx wrangler deploy', {
+      stdio: 'inherit',
+      env: process.env,
+    });
+    deployed = true;
+    break;
+  } catch (err) {
+    if (attempt === 3) throw err;
+    console.log('Transient Cloudflare API error. Retrying in 3 seconds...');
+    execSync('node -e "setTimeout(() => {}, 3000)"');
+  }
+}
+
+if (deployed) {
+  console.log('✓ Successfully deployed to Cloudflare Workers!');
+}

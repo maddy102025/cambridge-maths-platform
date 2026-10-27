@@ -77,9 +77,9 @@ export async function POST(request: Request) {
         fileType: ext.replace('.', '').toUpperCase(),
         fileSize: sizeStr,
         fileUrl,
-        uploadedByRole: user.role === 'TEACHER' || user.role === 'ADMIN' ? 'TEACHER' : 'STUDENT',
+        uploadedByRole: ['TEACHER', 'ADMIN', 'SuperAdmin'].includes(user.role as string) ? 'TEACHER' : 'STUDENT',
         uploadedById: user.id,
-        isPublicToClass: user.role === 'TEACHER' || user.role === 'ADMIN', // Teachers are public; students are private/review
+        isPublicToClass: ['TEACHER', 'ADMIN', 'SuperAdmin'].includes(user.role as string), // Teachers are public; students are private/review
       },
     });
 

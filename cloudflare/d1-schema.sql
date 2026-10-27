@@ -226,3 +226,18 @@ INSERT INTO Notification VALUES ('cmvp5iueu001p4wqc77c6qicb', 'cmvp5iucj00014wqc
 INSERT INTO Notification VALUES ('cmvp5iueu001q4wqc4vwwduob', 'cmvp5iucj00014wqcr9d06z8e', 'New Assignment Published', 'New assignment "Problem Set 5: Circle Theorems" is now available. Due in 4 days.', '/student/quest', 'ASSIGNMENT', 0, '2026-10-23T11:06:34.230Z');
 INSERT INTO Notification VALUES ('cmvp5iueu001r4wqcw06dtjkv', 'cmvp5iucj00014wqcr9d06z8e', 'New Study Drop Uploaded', 'Ms. Eleanor Vance added "Mock - 1 Revision Note" in Mathematics (4024).', '/student/modules', 'RESOURCE', 1, '2026-10-21T11:06:34.230Z');
 INSERT INTO ContactInquiry VALUES ('cmvp5iuex001s4wqcfk6itg0u', 'Dr. Tariq Rahman (Parent)', 'tariq.rahman@example.com', '+44 7890 123456', 'Pure Mathematics (A Level)', 'Inquiring about weekly small group sessions and individual past paper review for my son preparing for Cambridge A Levels in 2026.', 'NEW', '2026-10-26T11:06:34.233Z');
+-- SuperAdmin CMS (see migrations/0002_cms_content.sql)
+CREATE TABLE IF NOT EXISTS CmsContent (
+  id TEXT PRIMARY KEY NOT NULL,
+  key TEXT NOT NULL,
+  section TEXT NOT NULL,
+  category TEXT NOT NULL,
+  label TEXT NOT NULL,
+  value TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'text',
+  description TEXT,
+  updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updatedBy TEXT DEFAULT 'CMS Administrator'
+);
+CREATE UNIQUE INDEX IF NOT EXISTS CmsContent_key_key ON CmsContent(key);
+CREATE INDEX IF NOT EXISTS CmsContent_category_idx ON CmsContent(category);

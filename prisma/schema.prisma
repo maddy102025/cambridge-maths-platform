@@ -206,3 +206,17 @@ model ContactInquiry {
   status            String   @default("NEW") // NEW, CONTACTED, RESOLVED
   createdAt         DateTime @default(now())
 }
+
+model CmsContent {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  section     String
+  category    String   // PUBLIC, STUDENT, TEACHER, GLOBAL
+  label       String
+  value       String
+  type        String   @default("text") // text, textarea, number, url
+  description String?
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?  @default("CMS Administrator")
+}
+

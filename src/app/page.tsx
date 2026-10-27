@@ -5,6 +5,7 @@ import Link from 'next/link';
 import PublicNavbar from '@/components/layout/PublicNavbar';
 import PublicFooter from '@/components/layout/PublicFooter';
 import ContactSection from '@/components/home/ContactSection';
+import { useCms } from '@/lib/useCms';
 import {
   ArrowRight,
   Calculator,
@@ -78,6 +79,7 @@ const DEFAULT_SUBJECTS = [
 ];
 
 export default function HomePage() {
+  const { cms } = useCms();
   const [subjects, setSubjects] = useState<any[]>(DEFAULT_SUBJECTS);
 
   useEffect(() => {
@@ -105,29 +107,28 @@ export default function HomePage() {
             <div className="lg:col-span-7 space-y-6">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sage-100 border border-sage-300/70 text-xs font-bold tracking-widest uppercase text-slate-800">
                 <span className="w-2 h-2 rounded-full bg-sage-600 animate-pulse" />
-                <span>O & A LEVELS MATHEMATICS</span>
+                <span>{cms('public_hero_badge', 'CAIE O & A LEVELS MATHEMATICS')}</span>
               </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-muted leading-[1.12]">
-                Building Confidence <br className="hidden sm:inline" />
-                in <span className="underline decoration-sage-300 decoration-wavy decoration-from-font underline-offset-8">Mathematics.</span>
+                {cms('public_hero_title', 'Building Mathematical Mastery Through Rigorous Cambridge Pedagogy')}
               </h1>
 
               <p className="text-xl sm:text-2xl font-medium text-slate-soft tracking-tight">
-                Clear concepts. Structured practice. Confident results.
+                {cms('public_hero_subtitle', 'Clear Conceptual Proofs. Methodical Problem Architecture. Exceptional A* Examination Results.')}
               </p>
 
               <p className="text-base sm:text-lg text-slate-soft/90 leading-relaxed max-w-2xl font-normal">
-                Dedicated Cambridge International curriculum mentorship helping students master core mathematical principles, cultivate disciplined problem-solving intuition, and prepare thoroughly for Cambridge O & A Levels examinations.
+                {cms('public_hero_description', 'Dedicated Cambridge International curriculum mentorship helping students master core mathematical principles, cultivate disciplined problem-solving intuition, and prepare thoroughly for Cambridge O & A Levels examinations.')}
               </p>
 
               {/* CTAs */}
               <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                 <a
                   href="#classes"
-                  className="inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl bg-sage-300 hover:bg-sage-400 text-slate-900 font-semibold text-base shadow-sm border border-sage-400/60 transition-all focus:outline-none focus:ring-2 focus:ring-slate-muted"
+                  className="inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl bg-sage-300 hover:bg-sage-400 text-slate-900 font-semibold text-base shadow-sm border border-sage-400/60 transition-all focus:outline-none focus:ring-2 focus:ring-slate-muted cursor-pointer"
                 >
-                  <span>Explore Classes</span>
+                  <span>{cms('public_hero_cta_primary', 'Explore Cambridge Modules')}</span>
                   <ArrowRight className="w-4 h-4" />
                 </a>
 
@@ -136,23 +137,35 @@ export default function HomePage() {
                   className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-white hover:bg-ivory-200 text-slate-muted font-semibold text-base border border-sage-300 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-sage-400"
                 >
                   <GraduationCap className="w-5 h-5 text-slate-soft" />
-                  <span>Student Login</span>
+                  <span>{cms('public_hero_cta_secondary', 'Candidate Portal Access')}</span>
                 </Link>
               </div>
 
               {/* Subtle Trust Indicators */}
               <div className="pt-8 border-t border-sage-200/80 grid grid-cols-3 gap-6 max-w-xl">
                 <div>
-                  <div className="text-2xl font-bold text-slate-muted">100%</div>
-                  <div className="text-xs text-slate-soft mt-0.5">CAIE Syllabus Aligned</div>
+                  <div className="text-2xl font-bold text-slate-muted">
+                    {cms('public_hero_stat1_num', '98.4%')}
+                  </div>
+                  <div className="text-xs text-slate-soft mt-0.5">
+                    {cms('public_hero_stat1_label', 'A* and A Grades in 2025 Series')}
+                  </div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-slate-muted">4024 / 9709</div>
-                  <div className="text-xs text-slate-soft mt-0.5">O & A Level Focus</div>
+                  <div className="text-2xl font-bold text-slate-muted">
+                    {cms('public_hero_stat2_num', '4024 & 9709')}
+                  </div>
+                  <div className="text-xs text-slate-soft mt-0.5">
+                    {cms('public_hero_stat2_label', 'Strict CAIE Syllabus Alignment')}
+                  </div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-slate-muted">1-on-1 & Batch</div>
-                  <div className="text-xs text-slate-soft mt-0.5">Rigorous Feedback</div>
+                  <div className="text-2xl font-bold text-slate-muted">
+                    {cms('public_hero_stat3_num', '1-on-1 Feedback')}
+                  </div>
+                  <div className="text-xs text-slate-soft mt-0.5">
+                    {cms('public_hero_stat3_label', 'Mark Scheme Step Annotation')}
+                  </div>
                 </div>
               </div>
             </div>
@@ -183,10 +196,16 @@ export default function HomePage() {
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-900/90 via-slate-900/50 to-transparent p-5 text-white">
                       <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-sage-300" />
-                        <span className="text-xs uppercase tracking-wider font-semibold text-sage-200">Lead Instructor</span>
+                        <span className="text-xs uppercase tracking-wider font-semibold text-sage-200">
+                          {cms('global_instructor_title', 'Cambridge O & A Levels Specialist')}
+                        </span>
                       </div>
-                      <h3 className="text-xl font-bold tracking-tight text-white mt-1">Ms. Eleanor Vance</h3>
-                      <p className="text-xs text-white/80 mt-0.5">Pure & Applied Cambridge Mathematics Specialist</p>
+                      <h3 className="text-xl font-bold tracking-tight text-white mt-1">
+                        {cms('global_instructor_name', 'Ms. Eleanor Vance')}
+                      </h3>
+                      <p className="text-xs text-white/80 mt-0.5">
+                        {cms('global_institution_bio', 'Pure & Applied Cambridge Mathematics Specialist')}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -196,18 +215,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* SECTION B: ABOUT THE TEACHER */}
+      {/* SECTION B: ABOUT THE TEACHER & PHILOSOPHY */}
       <section id="about" className="py-24 bg-white relative border-b border-sage-200/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center space-y-4 mb-16">
             <span className="text-xs uppercase tracking-widest font-semibold px-3 py-1 rounded-full bg-sage-100 text-slate-800">
-              Teaching Philosophy
+              {cms('public_about_badge', 'Core Educational Philosophy')}
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-muted">
-              Deep Understanding Over Memorization
+              {cms('public_about_title', 'Deep Conceptual Proofs Over Rote Formula Memorization')}
             </h2>
             <p className="text-base sm:text-lg text-slate-soft">
-              Mathematics is not a collection of arbitrary formulas to memorize; it is a coherent language of logical problem-solving.
+              {cms('public_about_subtitle', 'Cambridge examinations are engineered to penalize formulaic cramming and reward systematic, deductive mathematical insight.')}
             </p>
           </div>
 
@@ -216,9 +235,11 @@ export default function HomePage() {
               <div className="w-12 h-12 rounded-xl bg-sage-200 flex items-center justify-center text-slate-muted">
                 <BrainCircuit className="w-6 h-6 text-slate-muted" />
               </div>
-              <h3 className="text-xl font-bold text-slate-muted">Conceptual Clarity</h3>
+              <h3 className="text-xl font-bold text-slate-muted">
+                {cms('public_about_pillar1_title', 'First-Principles Conceptual Proofs')}
+              </h3>
               <p className="text-sm text-slate-soft leading-relaxed">
-                Every topic begins from foundational principles. Rather than rote drill, students learn why a method works, allowing them to tackle unfamiliar variant questions on exam day with composure.
+                {cms('public_about_pillar1_desc', 'Every topic begins from foundational principles. Rather than rote drill, students learn why a method works, allowing them to tackle unfamiliar variant questions on exam day with composure.')}
               </p>
             </div>
 
@@ -226,9 +247,11 @@ export default function HomePage() {
               <div className="w-12 h-12 rounded-xl bg-sage-200 flex items-center justify-center text-slate-muted">
                 <FileCheck className="w-6 h-6 text-slate-muted" />
               </div>
-              <h3 className="text-xl font-bold text-slate-muted">Precise Exam Technique</h3>
+              <h3 className="text-xl font-bold text-slate-muted">
+                {cms('public_about_pillar2_title', 'Examiner Mark Scheme Precision')}
+              </h3>
               <p className="text-sm text-slate-soft leading-relaxed">
-                Cambridge examiners look for strict mathematical reasoning and standard notation. Students learn how marks are awarded, how to avoid algebraic slips, and how to pace multi-part questions under timed pressure.
+                {cms('public_about_pillar2_desc', 'Cambridge examiners look for strict mathematical reasoning and standard notation. Students learn how marks are awarded, how to avoid algebraic slips, and how to pace multi-part questions under timed pressure.')}
               </p>
             </div>
 
@@ -236,9 +259,11 @@ export default function HomePage() {
               <div className="w-12 h-12 rounded-xl bg-sage-200 flex items-center justify-center text-slate-muted">
                 <TrendingUp className="w-6 h-6 text-slate-muted" />
               </div>
-              <h3 className="text-xl font-bold text-slate-muted">Individual Student Progress</h3>
+              <h3 className="text-xl font-bold text-slate-muted">
+                {cms('public_about_pillar3_title', 'Individual Step-by-Step Diagnostic')}
+              </h3>
               <p className="text-sm text-slate-soft leading-relaxed">
-                Weekly Quest problem sets and structured attendance tracking ensure no learning gaps go unnoticed. Each student receives detailed, written feedback highlighting both strengths and exact areas for revision.
+                {cms('public_about_pillar3_desc', 'Weekly Quest problem sets and structured attendance tracking ensure no learning gaps go unnoticed. Each student receives detailed, written feedback highlighting both strengths and exact areas for revision.')}
               </p>
             </div>
           </div>
@@ -251,13 +276,13 @@ export default function HomePage() {
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
             <div>
               <span className="text-xs uppercase tracking-widest font-semibold px-3 py-1 rounded-full bg-sage-200 text-slate-800">
-                Cambridge Curriculum
+                {cms('public_classes_badge', 'Official CAIE Syllabuses')}
               </span>
               <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-muted mt-3">
-                Classes & Subjects Offered
+                {cms('public_classes_title', 'Rigorous Modular Course Streams')}
               </h2>
               <p className="text-base text-slate-soft mt-2 max-w-xl">
-                Structured courses aligned strictly with Cambridge Assessment International Education (CAIE) syllabuses.
+                {cms('public_classes_subtitle', 'Structured academic cohorts strictly aligned with Cambridge Assessment International Education syllabuses for May/June and Oct/Nov exam series.')}
               </p>
             </div>
 
@@ -265,7 +290,7 @@ export default function HomePage() {
               href="#contact"
               className="inline-flex items-center gap-2 text-sm font-semibold text-slate-muted hover:text-slate-900 group"
             >
-              <span>Have questions regarding syllabus selection?</span>
+              <span>{cms('public_classes_help_link_text', 'Have questions regarding syllabus paper combinations?')}</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </a>
           </div>
@@ -304,13 +329,13 @@ export default function HomePage() {
 
                   <div className="pt-6 mt-6 border-t border-sage-100 flex items-center justify-between">
                     <span className="text-xs text-slate-light font-medium">
-                      {subject.scheduleInfo || 'Enrolling for next cohort'}
+                      {subject.scheduleInfo || 'Enrolling for 2026 series'}
                     </span>
                     <a
                       href="#contact"
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-muted hover:text-slate-900 bg-sage-100 hover:bg-sage-200 px-3 py-1.5 rounded-lg transition-colors"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-muted hover:text-slate-900 bg-sage-100 hover:bg-sage-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
                     >
-                      <span>Enquire</span>
+                      <span>{cms('public_classes_btn_enquire', 'Inquire for Placement')}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </a>
                   </div>
@@ -321,59 +346,67 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* SECTION D: LEARNING APPROACH */}
+      {/* SECTION D: LEARNING APPROACH (4-STEP METHODOLOGY) */}
       <section id="approach" className="py-24 bg-white relative border-b border-sage-200/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center space-y-4 mb-16">
             <span className="text-xs uppercase tracking-widest font-semibold px-3 py-1 rounded-full bg-sage-100 text-slate-800">
-              The 4-Step Methodology
+              {cms('public_approach_badge', 'The 4-Stage Mastery Framework')}
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-muted">
-              Our Systematic Learning Approach
+              {cms('public_approach_title', 'A Systematic Framework from Fundamentals to Examination Confidence')}
             </h2>
             <p className="text-base text-slate-soft">
-              Designed to transform apprehension into mastery through a predictable, empowering framework.
+              {cms('public_approach_subtitle', 'Engineered to deconstruct cognitive friction, solidify mathematical intuition, and guarantee repeatable speed under timed conditions.')}
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="p-6 rounded-2xl bg-ivory-100 border border-sage-200 flex flex-col items-start space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-sage-300 text-slate-900 font-bold flex items-center justify-center text-sm shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-sage-300 text-slate-900 font-bold flex items-center justify-center text-sm shadow-sm font-mono">
                 01
               </div>
-              <h4 className="text-lg font-bold text-slate-muted">Concept First</h4>
+              <h4 className="text-lg font-bold text-slate-muted">
+                {cms('public_approach_step1_title', 'Axiomatic Derivation')}
+              </h4>
               <p className="text-xs text-slate-soft leading-relaxed">
-                Build a rigorous foundational understanding of core mathematical principles, theorems, and proofs before attempting complex applications.
+                {cms('public_approach_step1_desc', 'Deconstruct theorems and algebraic relationships through visual proofs and interactive derivations before applying algorithmic formulae.')}
               </p>
             </div>
 
             <div className="p-6 rounded-2xl bg-ivory-100 border border-sage-200 flex flex-col items-start space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-sage-300 text-slate-900 font-bold flex items-center justify-center text-sm shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-sage-300 text-slate-900 font-bold flex items-center justify-center text-sm shadow-sm font-mono">
                 02
               </div>
-              <h4 className="text-lg font-bold text-slate-muted">Practice with Purpose</h4>
+              <h4 className="text-lg font-bold text-slate-muted">
+                {cms('public_approach_step2_title', 'Topical Past Paper Sprints')}
+              </h4>
               <p className="text-xs text-slate-soft leading-relaxed">
-                Strengthen problem-solving endurance through curated question sets, topical past paper compilations, and step-by-step model answers.
+                {cms('public_approach_step2_desc', 'Solve curated problem sets classified by CAIE examiner question typology, exposing common variant traps and subtle mark scheme criteria.')}
               </p>
             </div>
 
             <div className="p-6 rounded-2xl bg-ivory-100 border border-sage-200 flex flex-col items-start space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-sage-300 text-slate-900 font-bold flex items-center justify-center text-sm shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-sage-300 text-slate-900 font-bold flex items-center justify-center text-sm shadow-sm font-mono">
                 03
               </div>
-              <h4 className="text-lg font-bold text-slate-muted">Track Your Progress</h4>
+              <h4 className="text-lg font-bold text-slate-muted">
+                {cms('public_approach_step3_title', 'Continuous Formative Quests')}
+              </h4>
               <p className="text-xs text-slate-soft leading-relaxed">
-                Consistent feedback via the Student Portal. Identify specific conceptual strengths and pinpoint exact sub-topics needing revision.
+                {cms('public_approach_step3_desc', 'Upload full working through the Candidate Portal for detailed line-by-line mark auditing, pinpointing algebraic slips and syntax deficiencies.')}
               </p>
             </div>
 
             <div className="p-6 rounded-2xl bg-ivory-100 border border-sage-200 flex flex-col items-start space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-sage-300 text-slate-900 font-bold flex items-center justify-center text-sm shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-sage-300 text-slate-900 font-bold flex items-center justify-center text-sm shadow-sm font-mono">
                 04
               </div>
-              <h4 className="text-lg font-bold text-slate-muted">Exam Readiness</h4>
+              <h4 className="text-lg font-bold text-slate-muted">
+                {cms('public_approach_step4_title', 'Timed Mock Simulations')}
+              </h4>
               <p className="text-xs text-slate-soft leading-relaxed">
-                Develop speed, accuracy, and examination calm through full-length timed mock exams and examiner mark scheme analysis.
+                {cms('public_approach_step4_desc', 'Full-length CAIE mock examinations under strict timed conditions to build composure, pacing intuition, and error-check self-discipline.')}
               </p>
             </div>
           </div>
@@ -384,23 +417,23 @@ export default function HomePage() {
       <section className="py-20 bg-sage-200/50 relative border-b border-sage-200">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
           <span className="text-xs font-bold uppercase tracking-widest text-slate-800 px-3 py-1 bg-white rounded-full border border-sage-300 shadow-sm">
-            Cambridge Admissions & Inquiries
+            {cms('public_cta_badge', 'Candidate Placement & Admissions')}
           </span>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-muted tracking-tight">
-            “Your Next Grade Starts with a Strong Foundation.”
+            {cms('public_cta_title', '“Your Cambridge A* Starts with Mathematical Precision.”')}
           </h2>
 
           <p className="text-base sm:text-lg text-slate-soft max-w-2xl mx-auto leading-relaxed">
-            Explore available classes and take the next step in your mathematics journey. Enroll in small group cohorts or private exam preparation.
+            {cms('public_cta_subtitle', 'Secure your place in upcoming small-cohort seminars or individualized Cambridge examination preparation. Diagnostic assessment included upon enrollment.')}
           </p>
 
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
               href="#contact"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-slate-muted hover:bg-slate-900 text-white font-semibold text-base shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-slate-muted"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-slate-muted hover:bg-slate-900 text-white font-semibold text-base shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-slate-muted cursor-pointer"
             >
-              <span>Enquire About Classes</span>
+              <span>{cms('public_cta_btn_primary', 'Schedule Academic Assessment')}</span>
               <ArrowRight className="w-4 h-4" />
             </a>
 
@@ -409,7 +442,7 @@ export default function HomePage() {
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-white hover:bg-ivory-100 text-slate-muted font-semibold text-base border border-sage-300 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-sage-400"
             >
               <UserCheck className="w-5 h-5 text-slate-soft" />
-              <span>Student Portal</span>
+              <span>{cms('public_cta_btn_secondary', 'Access Candidate Workspace')}</span>
             </Link>
           </div>
         </div>

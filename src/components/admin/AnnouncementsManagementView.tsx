@@ -103,7 +103,7 @@ export default function AnnouncementsManagementView({
               <input
                 type="text"
                 required
-                placeholder="e.g. CIE May/June 2026 Examination Registration"
+                placeholder="Cambridge Academic Notice (e.g. May/June 2026 Examination Timetable Release)"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-sage-200 bg-ivory-50 text-slate-muted text-xs focus:ring-2 focus:ring-sage-400"
@@ -152,12 +152,13 @@ export default function AnnouncementsManagementView({
               <textarea
                 rows={5}
                 required
-                placeholder="Detailed guidance, batch schedule changes, or exam center rules..."
+                placeholder="Official instructions, syllabus cohort updates, examination center rules, or formula revisions..."
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-sage-200 bg-ivory-50 text-slate-muted text-xs leading-relaxed resize-none focus:ring-2 focus:ring-sage-400"
               />
             </div>
+
 
             <button
               type="submit"

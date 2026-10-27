@@ -10,11 +10,25 @@ export async function GET(request: Request) {
     const view = searchParams.get('view');
 
     if (view === 'public') {
-      const subjects = await prisma.subject.findMany({
-        orderBy: { orderIndex: 'asc' },
-      });
-      return NextResponse.json({ subjects });
+      const [subjects, cmsRows] = await Promise.all([
+        prisma.subject.findMany({
+          orderBy: { orderIndex: 'asc' },
+        }),
+        (prisma as any)
+          .$queryRawUnsafe('SELECT key, value FROM CmsContent')
+          .catch(() => []),
+      ]);
+
+      const contentMap: Record<string, string> = {};
+      if (Array.isArray(cmsRows)) {
+        for (const row of cmsRows) {
+          contentMap[row.key] = row.value;
+        }
+      }
+
+      return NextResponse.json({ subjects, contentMap });
     }
+
 
     const user = await getCurrentUser();
     if (!user) {
@@ -158,7 +172,7 @@ export async function GET(request: Request) {
       if (!subject) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
       const isEnrolled =
-        subject.enrollments.length > 0 || user.role === 'TEACHER' || user.role === 'ADMIN';
+        subject.enrollments.length > 0 || ['TEACHER', 'ADMIN', 'SuperAdmin'].includes(user.role as string);
       if (!isEnrolled) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
@@ -228,7 +242,7 @@ export async function GET(request: Request) {
     }
 
     // Admin views check RBAC
-    if (user.role !== 'TEACHER' && user.role !== 'ADMIN') {
+    if (!['TEACHER', 'ADMIN', 'SuperAdmin'].includes(user.role as string)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

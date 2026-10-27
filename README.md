@@ -80,6 +80,23 @@ The platform adheres to an academic pastel color palette:
 
 ---
 
+### E. SuperAdmin Content Console (`/cms`)
+
+A separate auth layer (role `SuperAdmin`, cookie `cambridge_cms_token`, 24h JWT with a `cmsLayer` claim) manages every piece of site copy stored in the `CmsContent` table (83 fields: headlines, buttons, descriptions, contact info).
+
+| Route | Purpose |
+|---|---|
+| `/cms/login` | SuperAdmin sign-in (no prefilled credentials) |
+| `/cms` | Overview: field counts, customised fields, recent edits |
+| `/cms/public` · `/cms/student` · `/cms/teacher` · `/cms/global` | Section editors with search, per-field revert, per-section reset, sticky Publish bar |
+| `/cms/account` | Session info and security notes |
+
+- Layout: persistent sidebar on desktop, drawer on mobile (`src/components/cms/CmsShell.tsx`, `CmsSidebar.tsx`).
+- Pages read copy with the `cms(key, fallback)` hook (`src/lib/useCms.ts`); defaults live in `src/lib/cmsData.ts`.
+- API: `GET/POST /api/cms/content`, `POST /api/cms/reset`, `POST /api/cms/login|logout`, `GET /api/cms/session` (mirrored in `cloudflare/worker.ts`). Writes accept only known keys, max 5000 chars.
+- SuperAdmin can also open the teacher workspace (`/admin`) and its APIs.
+- Not yet CMS-managed: login/register/forgot-password headings, student header/sidebar and admin sidebar labels.
+
 ## 3. Demo Credentials
 
 | Role | Email | Password | Details |
@@ -88,7 +105,22 @@ The platform adheres to an academic pastel color palette:
 | **Student** | `student@cambridgemaths.edu` | `StudentPass123!` | Sarah Ahmed (O Level Math & Add Math, 11/19 attended) |
 | **Student (Alt)** | `liam@cambridgemaths.edu` | `StudentPass123!` | Liam Chen (A Level Pure Math & Mechanics) |
 
-*(Note: On the `/login` page, you can also click the quick demo buttons to autofill these credentials immediately).*
+*(Note: On the `/login` page, the Student and Teacher demo buttons autofill these credentials. **Remove them and change these passwords before real use.**)*
+
+**SuperAdmin** (`superadmin@cambridgemaths.edu`) is seeded by `prisma/seed.ts` / `cloudflare/seed-cms.sql`. The initial password is set in the seed; **rotate it immediately in production**. The emergency passkey login is disabled unless the `CMS_MASTER_PASSKEY` secret (12+ chars) is set (`npx wrangler secret put CMS_MASTER_PASSKEY`).
+
+**Secrets:** set `JWT_SECRET` as a Worker secret (`npx wrangler secret put JWT_SECRET`) rather than relying on the value in `wrangler.toml`.
+
+### Database migrations
+
+```bash
+# Local
+npx prisma db push --skip-generate && node scripts/seed-local-cms.mjs
+# Remote D1 (idempotent; seed uses INSERT OR IGNORE so edited content is never overwritten)
+npx wrangler d1 execute cambridge-maths-db --remote --file=cloudflare/migrations/0002_cms_content.sql
+node scripts/generate-cms-sql.mjs
+npx wrangler d1 execute cambridge-maths-db --remote --file=cloudflare/seed-cms.sql
+```
 
 ---
 

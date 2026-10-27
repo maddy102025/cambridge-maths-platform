@@ -243,7 +243,7 @@ export default function QuestTrackerView({
           <Search className="w-4 h-4 text-slate-light absolute left-3 top-2.5" />
           <input
             type="text"
-            placeholder="Search quest by title..."
+            placeholder="Search assigned Cambridge problem sets..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2 rounded-xl border border-sage-200 bg-ivory-50 text-xs text-slate-muted focus:outline-none focus:ring-2 focus:ring-sage-400 focus:bg-white"
@@ -504,7 +504,8 @@ export default function QuestTrackerView({
                       </label>
                       <input
                         type="text"
-                        placeholder="e.g. Please check Question 4 working on coordinate geometry..."
+                        placeholder="Specify formula substitutions or problem parts requiring feedback..."
+
                         value={studentNote}
                         onChange={(e) => setStudentNote(e.target.value)}
                         className="w-full px-3.5 py-2 rounded-xl border border-sage-200 bg-ivory-50 text-xs text-slate-muted focus:outline-none focus:ring-2 focus:ring-sage-400 focus:bg-white"

@@ -130,7 +130,7 @@ export default function StudentManagementView({
           <Search className="w-4 h-4 text-slate-light absolute left-3.5 top-2.5" />
           <input
             type="text"
-            placeholder="Search student by name or email..."
+            placeholder="Search candidates by name, email, or syllabus stream..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2 rounded-xl border border-sage-200 bg-ivory-50 text-xs text-slate-muted focus:outline-none focus:ring-2 focus:ring-sage-400 focus:bg-white"

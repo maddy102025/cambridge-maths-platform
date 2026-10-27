@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useCms } from '@/lib/useCms';
 import {
   Award,
   CalendarCheck,
@@ -11,10 +12,14 @@ import {
   ArrowRight,
   FileText,
   ChevronRight,
-  MessageSquare
+  MessageSquare,
+  Sparkles,
+  BookOpen,
+  Lightbulb
 } from 'lucide-react';
 
 export default function StudentHomePage() {
+  const { cms } = useCms();
   const [data, setData] = useState<any>(null);
 
   useEffect(() => {
@@ -63,6 +68,45 @@ export default function StudentHomePage() {
 
   return (
     <div className="space-y-8">
+      {/* STUDENT WELCOME & MOTIVATIONAL BANNER */}
+      <div className="bg-gradient-to-r from-sage-200/80 via-ivory-100 to-sage-100 p-6 sm:p-8 rounded-3xl border border-sage-300/80 subtle-paper-shadow relative overflow-hidden">
+        <div className="relative z-10 space-y-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 border border-sage-300 text-[11px] font-bold uppercase tracking-wider text-slate-800 shadow-xs">
+            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+            <span>{cms('student_dash_welcome_prefix', 'Candidate Academic Command Hub')}</span>
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-muted tracking-tight">
+            Welcome back, {user.fullName}!
+          </h1>
+
+          <p className="text-sm text-slate-soft max-w-2xl font-medium">
+            {cms('student_dash_welcome_subtitle', 'Live metrics, syllabus lecture streams, and assignment feedback synchronized from your instructor.')}
+          </p>
+
+          <div className="pt-2 flex items-center gap-3 flex-wrap">
+            <div className="p-3 rounded-xl bg-white/90 border border-sage-200 text-xs text-slate-soft italic max-w-xl">
+              {cms('student_dash_quote_text', '“Pure mathematics is, in its way, the poetry of logical ideas.” — Albert Einstein')}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* EXAMINER STRATEGY TIP */}
+      <div className="bg-white p-5 rounded-2xl border border-sage-200/90 subtle-paper-shadow flex items-start gap-4">
+        <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 shrink-0 mt-0.5">
+          <Lightbulb className="w-5 h-5 text-amber-600" />
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-slate-muted">
+            {cms('student_dash_tip_title', 'Examiner Strategy: Explicit Working')}
+          </h3>
+          <p className="text-xs text-slate-soft mt-1 leading-relaxed">
+            {cms('student_dash_tip_desc', 'Always state the relevant mathematical identity before numeric substitution. Cambridge mark schemes award method marks (M1) even if an arithmetic slip occurs in the final answer (A0).')}
+          </p>
+        </div>
+      </div>
+
       {/* SECTION A: PERFORMANCE SUMMARY CARDS */}
       <div>
         <div className="flex items-center justify-between mb-4">
@@ -74,7 +118,9 @@ export default function StudentHomePage() {
           {/* Card 1: Projected Grade */}
           <div className="bg-white p-5 rounded-2xl border border-sage-200 subtle-paper-shadow relative overflow-hidden">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-light">Projected Grade</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-light">
+                {cms('student_dash_card1_title', 'Projected Grade')}
+              </span>
               <div className="w-8 h-8 rounded-lg bg-sage-100 flex items-center justify-center text-slate-muted">
                 <Award className="w-4 h-4 text-slate-muted" />
               </div>
@@ -95,7 +141,9 @@ export default function StudentHomePage() {
           {/* Card 2: Attendance */}
           <div className="bg-white p-5 rounded-2xl border border-sage-200 subtle-paper-shadow">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-light">Class Attendance</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-light">
+                {cms('student_dash_card2_title', 'Class Attendance')}
+              </span>
               <div className="w-8 h-8 rounded-lg bg-sage-100 flex items-center justify-center text-slate-muted">
                 <CalendarCheck className="w-4 h-4 text-slate-muted" />
               </div>
@@ -124,7 +172,9 @@ export default function StudentHomePage() {
           {/* Card 3: Study Streak */}
           <div className="bg-white p-5 rounded-2xl border border-sage-200 subtle-paper-shadow">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-light">Study Streak</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-light">
+                {cms('student_dash_card4_title', 'Study Consistency Streak')}
+              </span>
               <div className="w-8 h-8 rounded-lg bg-sage-100 flex items-center justify-center text-slate-muted">
                 <Flame className="w-4 h-4 text-amber-600" />
               </div>
@@ -143,7 +193,9 @@ export default function StudentHomePage() {
           {/* Card 4: Assignments Completed */}
           <div className="bg-white p-5 rounded-2xl border border-sage-200 subtle-paper-shadow">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-light">Quest Completion</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-light">
+                {cms('student_dash_card3_title', 'Completed Problem Sets')}
+              </span>
               <div className="w-8 h-8 rounded-lg bg-sage-100 flex items-center justify-center text-slate-muted">
                 <CheckCircle className="w-4 h-4 text-slate-muted" />
               </div>
@@ -152,51 +204,52 @@ export default function StudentHomePage() {
               <span className="text-3xl font-extrabold text-slate-muted font-mono">
                 {completedAssignmentsCount} / {totalAssignmentsCount}
               </span>
-              <span className="text-xs text-slate-soft font-semibold">
-                ({totalAssignmentsCount > 0 ? Math.round((completedAssignmentsCount / totalAssignmentsCount) * 100) : 0}%)
-              </span>
+              <span className="text-xs text-slate-soft font-medium">Tasks Graded</span>
             </div>
             <p className="mt-3 text-xs text-slate-soft">
-              {pendingAssignmentsCount} pending submission deadlines remaining.
+              {pendingAssignmentsCount > 0
+                ? `${pendingAssignmentsCount} pending submission`
+                : 'All current problem sets submitted'}
             </p>
           </div>
         </div>
       </div>
 
-      {/* SECTION B & C: UPCOMING TASKS & ENROLLED MODULES */}
+      {/* SECTION B: UPCOMING TASKS & RECENT GRADES */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-7 space-y-6">
           <div className="bg-white rounded-3xl border border-sage-200 p-6 sm:p-7 subtle-paper-shadow">
             <div className="flex items-center justify-between pb-4 border-b border-sage-200">
               <div className="flex items-center gap-2">
                 <Clock className="w-5 h-5 text-slate-muted" />
-                <h3 className="text-lg font-bold text-slate-muted">Upcoming Assignment Deadlines</h3>
+                <h3 className="text-lg font-bold text-slate-muted">Upcoming Quest Tasks</h3>
               </div>
               <Link
                 href="/student/quest"
-                className="text-xs font-semibold text-slate-soft hover:text-slate-900 inline-flex items-center gap-1"
+                className="text-xs font-bold text-slate-muted hover:text-slate-900 inline-flex items-center gap-1"
               >
-                <span>View Quest</span>
-                <ChevronRight className="w-3.5 h-3.5" />
+                <span>View All Tasks</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
             <div className="divide-y divide-sage-100 mt-2">
               {upcomingTasks.length === 0 ? (
-                <div className="py-8 text-center">
+                <div className="py-8 text-center text-xs text-slate-light">
                   <CheckCircle className="w-8 h-8 text-sage-600 mx-auto mb-2" />
-                  <p className="text-sm font-semibold text-slate-muted">All Caught Up!</p>
-                  <p className="text-xs text-slate-light mt-0.5">No pending assignment deadlines at the moment.</p>
+                  <p className="font-bold text-slate-muted">You are completely up to date!</p>
+                  <p>No active problem sets pending submission.</p>
                 </div>
               ) : (
                 upcomingTasks.map((task: any) => {
                   const dueDate = new Date(task.dueDate);
                   const isUrgent = dueDate.getTime() - Date.now() < 48 * 3600 * 1000;
+
                   return (
                     <div key={task.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-ivory-200 text-slate-soft border border-sage-200">
+                          <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-ivory-200 text-slate-soft">
                             {task.subject?.name}
                           </span>
                           {isUrgent && (
@@ -215,7 +268,7 @@ export default function StudentHomePage() {
                         href={`/student/quest?id=${task.id}`}
                         className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-900 bg-sage-200 hover:bg-sage-300 rounded-xl transition-colors shrink-0"
                       >
-                        <span>Open Task</span>
+                        <span>{cms('student_dash_btn_submit_quest', 'Submit Solution Working')}</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </Link>
                     </div>
@@ -279,76 +332,66 @@ export default function StudentHomePage() {
                 href="/student/modules"
                 className="text-xs font-semibold text-slate-soft hover:text-slate-900 inline-flex items-center gap-1"
               >
-                <span>All Modules</span>
+                <span>Browse All</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
-            <div className="space-y-3 mt-4">
-              {enrollments.length === 0 ? (
-                <p className="text-xs text-slate-light py-4 text-center">
-                  You are not currently enrolled in any modules. Contact instructor.
-                </p>
-              ) : (
-                enrollments.map((enrollment: any) => {
-                  const sub = enrollment.subject;
-                  return (
-                    <Link
-                      key={sub.id}
-                      href={`/student/modules?id=${sub.id}`}
-                      className="block p-4 rounded-2xl bg-ivory-50 border border-sage-200/80 hover:bg-sage-100/50 transition-all group"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded bg-white text-slate-soft border border-sage-200">
-                          {sub.level}
-                        </span>
-                        <span className="text-xs font-medium text-slate-light">
-                          {sub.materials?.length || 0} Drops • {sub.assignments?.length || 0} Quests
-                        </span>
-                      </div>
-                      <h4 className="text-base font-bold text-slate-muted group-hover:text-slate-900 mt-2">
-                        {sub.name}
-                      </h4>
-                      <p className="text-xs font-mono text-slate-light mt-0.5 truncate">
-                        {sub.syllabusInfo}
-                      </p>
-                    </Link>
-                  );
-                })
-              )}
+            <div className="divide-y divide-sage-100 mt-2">
+              {enrollments.map((enr: any) => (
+                <div key={enr.id} className="py-3.5 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-light block">
+                      {enr.subject?.code}
+                    </span>
+                    <h4 className="text-sm font-bold text-slate-muted">{enr.subject?.name}</h4>
+                    <p className="text-xs text-slate-soft mt-0.5">{enr.subject?.level}</p>
+                  </div>
+
+                  <Link
+                    href={`/student/modules?id=${enr.subject?.id}`}
+                    className="p-2 rounded-xl bg-ivory-100 hover:bg-sage-100 text-slate-muted transition-colors"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              ))}
             </div>
           </div>
 
           <div className="bg-white rounded-3xl border border-sage-200 p-6 subtle-paper-shadow">
             <div className="flex items-center justify-between pb-4 border-b border-sage-200">
-              <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-slate-muted" />
-                <h3 className="text-base font-bold text-slate-muted">Recent Study Drops</h3>
-              </div>
+              <h3 className="text-lg font-bold text-slate-muted">Recent Study Drops</h3>
               <Link
                 href="/student/modules"
-                className="text-xs font-semibold text-slate-soft hover:text-slate-900"
+                className="text-xs font-semibold text-slate-soft hover:text-slate-900 inline-flex items-center gap-1"
               >
-                Repository
+                <span>{cms('student_dash_btn_browse_drops', 'Access Syllabus Lecture Drops')}</span>
+                <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
-            <div className="space-y-3 mt-4">
+            <div className="divide-y divide-sage-100 mt-2">
               {recentMaterials.map((mat: any) => (
-                <div
-                  key={mat.id}
-                  className="p-3 rounded-xl border border-sage-200 flex items-center justify-between gap-3 text-xs"
-                >
-                  <div className="overflow-hidden">
-                    <p className="font-bold text-slate-muted truncate">{mat.title}</p>
-                    <p className="text-[11px] text-slate-light truncate mt-0.5">
-                      {mat.subject?.name} • {mat.fileType} ({mat.fileSize})
-                    </p>
+                <div key={mat.id} className="py-3.5 flex items-center justify-between gap-3">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-sage-100 flex items-center justify-center text-slate-muted shrink-0 mt-0.5">
+                      <FileText className="w-4 h-4 text-slate-muted" />
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-bold text-slate-muted truncate">{mat.title}</h4>
+                      <p className="text-[11px] text-slate-light truncate">
+                        {mat.subject?.name} • {mat.fileType} ({mat.fileSize})
+                      </p>
+                    </div>
                   </div>
+
                   <a
                     href={mat.fileUrl}
                     download
-                    className="px-2.5 py-1.5 rounded-lg bg-sage-100 hover:bg-sage-200 text-slate-900 font-semibold shrink-0 transition-colors"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-semibold text-slate-soft hover:text-slate-900 px-2 py-1 rounded bg-ivory-100 hover:bg-sage-100 transition-colors shrink-0"
                   >
                     Download
                   </a>

@@ -103,6 +103,17 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
       {/* Bottom links */}
       <div className="pt-4 border-t border-sage-200 space-y-2">
         <Link
+          href="/cms"
+          className="flex items-center justify-between px-3 py-2 text-xs font-bold text-amber-900 bg-amber-100/70 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all"
+        >
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            <span>SuperAdmin CMS Suite</span>
+          </div>
+          <ChevronRight className="w-3.5 h-3.5" />
+        </Link>
+
+        <Link
           href="/student/home"
           className="flex items-center justify-between px-3 py-2 text-xs font-medium text-slate-soft hover:text-slate-900 hover:bg-white rounded-lg transition-colors"
         >
@@ -120,6 +131,7 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
           <span>Public Teacher Site</span>
           <ChevronRight className="w-3.5 h-3.5" />
         </Link>
+
 
         <button
           onClick={handleLogout}

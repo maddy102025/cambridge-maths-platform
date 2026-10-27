@@ -130,7 +130,7 @@ export default function CoursesManagementView({ subjects }: CoursesManagementVie
               <input
                 type="text"
                 required
-                placeholder="e.g. Mock - 1 Revision Note"
+                placeholder="CAIE Syllabus Lecture Notes & Worked Solutions"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full px-3.5 py-2 rounded-xl border border-sage-200 bg-ivory-50 text-slate-muted text-xs focus:ring-2 focus:ring-sage-400"
@@ -144,7 +144,7 @@ export default function CoursesManagementView({ subjects }: CoursesManagementVie
               <input
                 type="text"
                 required
-                placeholder="e.g. Algebra & Functions or Coordinate Geometry"
+                placeholder="Syllabus chapter (e.g. Integration by Parts & Differential Equations)"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 className="w-full px-3.5 py-2 rounded-xl border border-sage-200 bg-ivory-50 text-slate-muted text-xs focus:ring-2 focus:ring-sage-400"
@@ -157,12 +157,13 @@ export default function CoursesManagementView({ subjects }: CoursesManagementVie
               </label>
               <textarea
                 rows={3}
-                placeholder="Summary formulas, common pitfalls to avoid..."
+                placeholder="Explicit method formulas, mark scheme criteria, and examiner cautions..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full px-3.5 py-2 rounded-xl border border-sage-200 bg-ivory-50 text-slate-muted text-xs resize-none focus:ring-2 focus:ring-sage-400"
               />
             </div>
+
 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-muted mb-1">

@@ -18,10 +18,32 @@ async function main() {
   await prisma.studentEnrollment.deleteMany();
   await prisma.subject.deleteMany();
   await prisma.contactInquiry.deleteMany();
+  await (prisma as any).$executeRawUnsafe('DELETE FROM CmsContent').catch(() => {});
   await prisma.user.deleteMany();
+
+  // 0. Create Master SuperAdmin Account for CMS Layer
+  const superAdminHash = await bcrypt.hash('SuperAdminPass2026!', 10);
+  const superAdmin = await prisma.user.create({
+    data: {
+      id: 'usr_superadmin_01',
+      email: 'superadmin@cambridgemaths.edu',
+      passwordHash: superAdminHash,
+      fullName: 'Master CMS SuperAdmin',
+      role: 'SuperAdmin',
+      phone: '+44 20 7946 0999',
+      phoneVerified: true,
+      emailVerified: true,
+      bio: 'SuperAdmin with master authority over all CMS site contents, public pages, student portals, and teacher workspaces.',
+      avatarUrl: null,
+      projectedGrade: 'N/A',
+      studyStreakDays: 365,
+    },
+  });
+  console.log('Created SuperAdmin:', superAdmin.email);
 
   // 1. Create Teacher / Admin Account
   const teacherHash = await bcrypt.hash('AdminPass123!', 10);
+
   const teacher = await prisma.user.create({
     data: {
       email: 'teacher@cambridgemaths.edu',
@@ -523,8 +545,30 @@ async function main() {
     },
   });
 
+  // 14. Seed CMS Content
+  const fs = await import('fs');
+  const path = await import('path');
+  try {
+    const cmsSqlPath = path.resolve(process.cwd(), 'cloudflare', 'seed-cms.sql');
+    if (fs.existsSync(cmsSqlPath)) {
+      const sql = fs.readFileSync(cmsSqlPath, 'utf8');
+      const cleanSql = sql.replace(/--.*$/gm, '');
+      const stmts = cleanSql
+        .split(';\n')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0 && s.startsWith('INSERT'));
+      for (const s of stmts) {
+        await (prisma as any).$executeRawUnsafe(s);
+      }
+      console.log(`Seeded ${stmts.length} CMS content items into database.`);
+    }
+  } catch (e) {
+    console.warn('Could not seed CMS items:', e);
+  }
+
   console.log('--- Database Seeding Complete ---');
 }
+
 
 main()
   .catch((e) => {

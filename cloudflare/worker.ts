@@ -1,10 +1,12 @@
 import { SignJWT, jwtVerify } from 'jose';
 import bcrypt from 'bcryptjs';
+import { INITIAL_CMS_DATA } from '../src/lib/cmsData';
 
 export interface Env {
   DB: any; // D1Database
   ASSETS: { fetch: (req: Request | string) => Promise<Response> };
   JWT_SECRET?: string;
+  CMS_MASTER_PASSKEY?: string; // optional secret; enables the emergency CMS passkey when set
 }
 
 const COOKIE_NAME = 'cambridge_maths_token';
@@ -46,6 +48,41 @@ function getCookie(request: Request, name: string): string | null {
 function makeSetCookie(token: string, maxAge = 60 * 60 * 24 * 7): string {
   return `${COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`;
 }
+
+const CMS_COOKIE_NAME = 'cambridge_cms_token';
+const CMS_MAX_VALUE_LENGTH = 5000;
+const CMS_DEFAULTS_BY_KEY = new Map(INITIAL_CMS_DATA.map((d) => [d.key, d]));
+
+// Responses that set several cookies must use separate Set-Cookie headers (comma-joining is invalid).
+function jsonWithCookies(data: any, status: number, cookies: string[]): Response {
+  const headers = new Headers({ 'Content-Type': 'application/json' });
+  for (const c of cookies) headers.append('Set-Cookie', c);
+  return new Response(JSON.stringify(data), { status, headers });
+}
+
+function isSuperAdminRole(role?: string | null): boolean {
+  if (!role) return false;
+  const clean = role.trim().toUpperCase();
+  return clean === 'SUPERADMIN' || clean === 'SUPER_ADMIN';
+}
+
+function makeSetCmsCookie(token: string, maxAge = 60 * 60 * 24): string {
+  return `${CMS_COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`;
+}
+
+async function getCurrentCmsUserFromD1(request: Request, env: Env) {
+  const token = getCookie(request, CMS_COOKIE_NAME);
+  if (!token) return null;
+  try {
+    const { payload } = await jwtVerify(token, getJwtSecret(env));
+    if (!payload || !payload.userId || !payload.cmsLayer) return null;
+    if (!isSuperAdminRole(payload.role as string)) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
 
 async function getCurrentUserFromD1(request: Request, env: Env) {
   const token = getCookie(request, COOKIE_NAME);
@@ -150,16 +187,241 @@ export default {
     // 2. Handle /api/* routes via D1
     if (pathname.startsWith('/api/')) {
       try {
+        // --- POST /api/cms/login ---
+        if (pathname === '/api/cms/login' && request.method === 'POST') {
+          const body = (await request.json().catch(() => ({}))) as any;
+          const { email, password, masterPasskey } = body;
+
+          let superAdminUser: any = null;
+
+          // Emergency passkey is only enabled when CMS_MASTER_PASSKEY is configured as a secret.
+          if (
+            env.CMS_MASTER_PASSKEY &&
+            typeof masterPasskey === 'string' &&
+            masterPasskey.trim() === env.CMS_MASTER_PASSKEY
+          ) {
+            superAdminUser = await env.DB.prepare(
+              "SELECT * FROM User WHERE role IN ('SuperAdmin', 'SUPERADMIN') ORDER BY createdAt ASC LIMIT 1"
+            ).first();
+            if (!superAdminUser) {
+              return jsonResponse({ error: 'No SuperAdmin account exists in the database.' }, 404);
+            }
+          } else {
+            if (!email || !password) {
+              return jsonResponse({ error: 'Email and password are required for SuperAdmin CMS access.' }, 400);
+            }
+            const user = await env.DB.prepare('SELECT * FROM User WHERE email = ?')
+              .bind(String(email).trim().toLowerCase())
+              .first();
+
+            // Same message for unknown user / wrong password to avoid account enumeration.
+            const isMatch = user ? await bcrypt.compare(password, user.passwordHash as string) : false;
+            if (!user || !isMatch) {
+              return jsonResponse({ error: 'Invalid SuperAdmin credentials.' }, 401);
+            }
+            if (!isSuperAdminRole(user.role as string)) {
+              return jsonResponse({ error: 'This account is not authorised for the CMS layer.' }, 403);
+            }
+            superAdminUser = user;
+          }
+
+          const cmsToken = await new SignJWT({
+            userId: superAdminUser.id,
+            email: superAdminUser.email,
+            fullName: superAdminUser.fullName,
+            role: 'SuperAdmin',
+            cmsLayer: true,
+            authenticatedAt: new Date().toISOString(),
+          })
+            .setProtectedHeader({ alg: 'HS256' })
+            .setIssuedAt()
+            .setExpirationTime('24h')
+            .sign(getJwtSecret(env));
+
+          const stdToken = await new SignJWT({
+            userId: superAdminUser.id,
+            email: superAdminUser.email,
+            fullName: superAdminUser.fullName,
+            role: 'SuperAdmin',
+          })
+            .setProtectedHeader({ alg: 'HS256' })
+            .setIssuedAt()
+            .setExpirationTime('7d')
+            .sign(getJwtSecret(env));
+
+          return jsonWithCookies(
+            {
+              success: true,
+              message: 'SuperAdmin authenticated to CMS layer successfully.',
+              user: {
+                id: superAdminUser.id,
+                email: superAdminUser.email,
+                fullName: superAdminUser.fullName,
+                role: 'SuperAdmin',
+              },
+            },
+            200,
+            [makeSetCmsCookie(cmsToken), makeSetCookie(stdToken)]
+          );
+        }
+
+        // --- GET /api/cms/session ---
+        if (pathname === '/api/cms/session' && request.method === 'GET') {
+          const cmsSession = await getCurrentCmsUserFromD1(request, env);
+          if (!cmsSession) {
+            return jsonResponse({ authenticated: false, error: 'Unauthorized CMS session. SuperAdmin login required.' }, 401);
+          }
+          return jsonResponse({
+            authenticated: true,
+            user: {
+              id: cmsSession.userId,
+              email: cmsSession.email,
+              fullName: cmsSession.fullName,
+              role: 'SuperAdmin',
+            },
+          });
+        }
+
+        // --- POST /api/cms/logout ---
+        if (pathname === '/api/cms/logout' && request.method === 'POST') {
+          return jsonWithCookies({ success: true, message: 'SuperAdmin CMS session ended.' }, 200, [
+            makeSetCmsCookie('', 0),
+          ]);
+        }
+
+        // --- GET /api/cms/content ---
+        if (pathname === '/api/cms/content' && request.method === 'GET') {
+          const { results: rows } = await env.DB.prepare(
+            'SELECT * FROM CmsContent ORDER BY category ASC, section ASC, key ASC'
+          )
+            .all()
+            .catch(() => ({ results: [] as any[] }));
+
+          // Merge DB rows over the canonical defaults so newly added keys always appear.
+          const merged = new Map<string, any>();
+          for (const def of INITIAL_CMS_DATA) merged.set(def.key, { ...def });
+          for (const row of rows || []) {
+            const base = merged.get(row.key);
+            merged.set(row.key, base ? { ...base, ...row } : row);
+          }
+          const items = Array.from(merged.values());
+          const contentMap: Record<string, string> = {};
+          for (const it of items) contentMap[it.key] = it.value;
+
+          return jsonResponse({ success: true, items, contentMap, count: items.length });
+        }
+
+        // --- POST /api/cms/content ---
+        if (pathname === '/api/cms/content' && request.method === 'POST') {
+          const cmsSession = await getCurrentCmsUserFromD1(request, env);
+          if (!cmsSession) {
+            return jsonResponse({ error: 'Unauthorized: Only SuperAdmin can modify website contents.' }, 401);
+          }
+
+          const body = (await request.json().catch(() => ({}))) as any;
+          const { updates, items, key, value } = body;
+          const itemsToUpdate: Array<{ key: string; value: string }> = [];
+
+          if (key && typeof value === 'string') {
+            itemsToUpdate.push({ key, value });
+          } else if (Array.isArray(items)) {
+            for (const it of items) {
+              if (it && it.key && typeof it.value === 'string') itemsToUpdate.push({ key: it.key, value: it.value });
+            }
+          } else if (updates && typeof updates === 'object') {
+            for (const [k, v] of Object.entries(updates)) {
+              if (typeof v === 'string') itemsToUpdate.push({ key: k, value: v });
+            }
+          }
+
+          if (itemsToUpdate.length === 0) {
+            return jsonResponse({ error: 'No valid content updates provided.' }, 400);
+          }
+
+          const now = new Date().toISOString();
+          const updatedBy = (cmsSession.fullName as string) || 'SuperAdmin';
+          let updatedCount = 0;
+          const rejected: string[] = [];
+
+          for (const it of itemsToUpdate) {
+            const def = CMS_DEFAULTS_BY_KEY.get(it.key);
+            if (!def || it.value.length > CMS_MAX_VALUE_LENGTH) {
+              rejected.push(it.key);
+              continue;
+            }
+            await env.DB.prepare(
+              `INSERT INTO CmsContent (id, key, section, category, label, value, type, description, updatedAt, updatedBy)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+               ON CONFLICT(key) DO UPDATE SET
+                 value = excluded.value,
+                 updatedAt = excluded.updatedAt,
+                 updatedBy = excluded.updatedBy`
+            )
+              .bind(def.id, def.key, def.section, def.category, def.label, it.value, def.type, def.description || '', now, updatedBy)
+              .run();
+            updatedCount++;
+          }
+
+          return jsonResponse({
+            success: true,
+            message: `Synchronized ${updatedCount} content field${updatedCount === 1 ? '' : 's'} to the remote D1 database.`,
+            updatedCount,
+            rejected,
+            updatedAt: now,
+            updatedBy,
+          });
+        }
+
+        // --- POST /api/cms/reset ---
+        if (pathname === '/api/cms/reset' && request.method === 'POST') {
+          const cmsSession = await getCurrentCmsUserFromD1(request, env);
+          if (!cmsSession) {
+            return jsonResponse({ error: 'Unauthorized: Only SuperAdmin can reset CMS content.' }, 401);
+          }
+          const body = (await request.json().catch(() => ({}))) as any;
+          const targets = body?.section
+            ? INITIAL_CMS_DATA.filter((i) => i.section === body.section)
+            : INITIAL_CMS_DATA;
+          const now = new Date().toISOString();
+          for (const def of targets) {
+            await env.DB.prepare(
+              `INSERT INTO CmsContent (id, key, section, category, label, value, type, description, updatedAt, updatedBy)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+               ON CONFLICT(key) DO UPDATE SET
+                 value = excluded.value,
+                 updatedAt = excluded.updatedAt,
+                 updatedBy = excluded.updatedBy`
+            )
+              .bind(def.id, def.key, def.section, def.category, def.label, def.value, def.type, def.description || '', now, 'SuperAdmin Default Reset')
+              .run();
+          }
+          return jsonResponse({
+            success: true,
+            message: `Reset ${targets.length} content fields to the standard defaults.`,
+            resetCount: targets.length,
+          });
+        }
+
         // --- GET /api/portal ---
         if (pathname === '/api/portal' && request.method === 'GET') {
           const view = searchParams.get('view');
 
           if (view === 'public') {
-            const { results: subjects } = await env.DB.prepare(
-              'SELECT * FROM Subject ORDER BY orderIndex ASC'
-            ).all();
-            return jsonResponse({ subjects });
+            const [{ results: subjects }, { results: cmsRows }] = await Promise.all([
+              env.DB.prepare('SELECT * FROM Subject ORDER BY orderIndex ASC').all(),
+              env.DB.prepare('SELECT key, value FROM CmsContent').all().catch(() => ({ results: [] })),
+            ]);
+
+            const contentMap: Record<string, string> = {};
+            if (Array.isArray(cmsRows)) {
+              for (const r of cmsRows) {
+                contentMap[r.key] = r.value;
+              }
+            }
+
+            return jsonResponse({ subjects, contentMap });
           }
+
 
           const user = await getCurrentUserFromD1(request, env);
           if (!user) return jsonResponse({ error: 'Unauthorized' }, 401);
@@ -330,7 +592,7 @@ export default {
             ]);
 
             const isEnrolled =
-              enrollments.length > 0 || user.role === 'TEACHER' || user.role === 'ADMIN';
+              enrollments.length > 0 || ['TEACHER', 'ADMIN', 'SuperAdmin'].includes(user.role as string);
             if (!isEnrolled) return jsonResponse({ error: 'Forbidden' }, 403);
 
             return jsonResponse({
@@ -446,7 +708,7 @@ export default {
           }
 
           // --- ADMIN VIEWS ---
-          if (user.role !== 'TEACHER' && user.role !== 'ADMIN') {
+          if (!['TEACHER', 'ADMIN', 'SuperAdmin'].includes(user.role as string)) {
             return jsonResponse({ error: 'Forbidden' }, 403);
           }
 
@@ -679,8 +941,9 @@ export default {
             return jsonResponse({ error: 'Invalid email address or password.' }, 401);
           }
 
-          const isTeacher = user.role === 'TEACHER' || user.role === 'ADMIN';
-          const redirectUrl = isTeacher ? '/admin' : '/student/home';
+          const isSuper = isSuperAdminRole(user.role as string);
+          const isTeacher = ['TEACHER', 'ADMIN', 'SuperAdmin'].includes(user.role as string);
+          const redirectUrl = isSuper ? '/cms' : isTeacher ? '/admin' : '/student/home';
 
           const token = await new SignJWT({
             userId: user.id,
@@ -693,7 +956,26 @@ export default {
             .setExpirationTime('7d')
             .sign(getJwtSecret(env));
 
-          return jsonResponse(
+          const cookies: string[] = [makeSetCookie(token)];
+
+          if (isSuper) {
+            const cmsToken = await new SignJWT({
+              userId: user.id,
+              email: user.email,
+              fullName: user.fullName,
+              role: 'SuperAdmin',
+              cmsLayer: true,
+              authenticatedAt: new Date().toISOString(),
+            })
+              .setProtectedHeader({ alg: 'HS256' })
+              .setIssuedAt()
+              .setExpirationTime('24h')
+              .sign(getJwtSecret(env));
+
+            cookies.push(makeSetCmsCookie(cmsToken));
+          }
+
+          return jsonWithCookies(
             {
               success: true,
               user: {
@@ -705,9 +987,10 @@ export default {
               redirectUrl,
             },
             200,
-            { 'Set-Cookie': makeSetCookie(token) }
+            cookies
           );
         }
+
 
         // --- POST /api/auth/register ---
         if (pathname === '/api/auth/register' && request.method === 'POST') {
@@ -838,7 +1121,7 @@ export default {
           const saved = await saveFileToD1(env, file, 'mat');
           const id = uid('mat');
           const now = new Date().toISOString();
-          const isTeacher = user.role === 'TEACHER' || user.role === 'ADMIN';
+          const isTeacher = ['TEACHER', 'ADMIN', 'SuperAdmin'].includes(user.role as string);
 
           await env.DB.prepare(
             'INSERT INTO StudyMaterial (id, subjectId, title, topic, description, fileType, fileSize, fileUrl, uploadedByRole, uploadedById, isPublicToClass, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
@@ -979,7 +1262,7 @@ export default {
         // --- ADMIN MUTATION ENDPOINTS ---
         if (pathname.startsWith('/api/admin/')) {
           const user = await getCurrentUserFromD1(request, env);
-          if (!user || (user.role !== 'TEACHER' && user.role !== 'ADMIN')) {
+          if (!user || !['TEACHER', 'ADMIN', 'SuperAdmin'].includes(user.role as string)) {
             return jsonResponse({ error: 'Unauthorized' }, 403);
           }
 

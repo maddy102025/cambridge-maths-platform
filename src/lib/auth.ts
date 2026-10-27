@@ -12,9 +12,10 @@ const COOKIE_NAME = 'cambridge_maths_token';
 export interface TokenPayload {
   userId: string;
   email: string;
-  role: 'STUDENT' | 'TEACHER' | 'ADMIN';
+  role: 'STUDENT' | 'TEACHER' | 'ADMIN' | 'SuperAdmin' | 'SUPERADMIN' | string;
   fullName: string;
 }
+
 
 export async function hashPassword(password: string): Promise<string> {
   const salt = await bcrypt.genSalt(10);

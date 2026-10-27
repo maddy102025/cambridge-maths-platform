@@ -7,7 +7,7 @@ import path from 'path';
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
-    if (!user || (user.role !== 'TEACHER' && user.role !== 'ADMIN')) {
+    if (!user || !['TEACHER', 'ADMIN', 'SuperAdmin'].includes(user.role as string)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
